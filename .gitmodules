@@ -1,0 +1,6 @@
+[submodule "bindings/libs/g2o"]
+	path = bindings/libs/g2o
+	url = https://github.com/urbinn/g2o
+[submodule "bindings/libs/pybind11"]
+	path = bindings/libs/pybind11
+	url = https://github.com/pybind/pybind11
