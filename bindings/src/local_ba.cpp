@@ -399,22 +399,22 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         g2o::SE3Quat SE3quat = vSE3->estimate();
         pKF.second = toEigenBundel(SE3quat);
         //cout<< pKF.second << endl;
-        keyframes(pKF.first.first, 1) = pKF.second(0, 0);
-        keyframes(pKF.first.first, 2) = pKF.second(0, 1);
-        keyframes(pKF.first.first, 3) = pKF.second(0, 2);
-        keyframes(pKF.first.first, 4) = pKF.second(0, 3);
-        keyframes(pKF.first.first, 5) = pKF.second(1, 0);
-        keyframes(pKF.first.first, 6) = pKF.second(1, 1);
-        keyframes(pKF.first.first, 7) = pKF.second(1, 2);
-        keyframes(pKF.first.first, 8) = pKF.second(1, 3);
-        keyframes(pKF.first.first, 9) = pKF.second(2, 0);
-        keyframes(pKF.first.first, 10) = pKF.second(2, 1);
-        keyframes(pKF.first.first, 11) = pKF.second(2, 2);
-        keyframes(pKF.first.first, 12) = pKF.second(2, 3);
-        keyframes(pKF.first.first, 13) = pKF.second(3, 0);
-        keyframes(pKF.first.first, 14) = pKF.second(3, 1);
-        keyframes(pKF.first.first, 15) = pKF.second(3, 2);
-        keyframes(pKF.first.first, 16) = pKF.second(3, 3);
+        keyframes(pKF.first.first, 2) = pKF.second(0, 0);
+        keyframes(pKF.first.first, 3) = pKF.second(0, 1);
+        keyframes(pKF.first.first, 4) = pKF.second(0, 2);
+        keyframes(pKF.first.first, 5) = pKF.second(0, 3);
+        keyframes(pKF.first.first, 6) = pKF.second(1, 0);
+        keyframes(pKF.first.first, 7) = pKF.second(1, 1);
+        keyframes(pKF.first.first, 8) = pKF.second(1, 2);
+        keyframes(pKF.first.first, 9) = pKF.second(1, 3);
+        keyframes(pKF.first.first, 10) = pKF.second(2, 0);
+        keyframes(pKF.first.first, 11) = pKF.second(2, 1);
+        keyframes(pKF.first.first, 12) = pKF.second(2, 2);
+        keyframes(pKF.first.first, 13) = pKF.second(2, 3);
+        keyframes(pKF.first.first, 14) = pKF.second(3, 0);
+        keyframes(pKF.first.first, 15) = pKF.second(3, 1);
+        keyframes(pKF.first.first, 16) = pKF.second(3, 2);
+        keyframes(pKF.first.first, 17) = pKF.second(3, 3);
     }
     
     //Points
