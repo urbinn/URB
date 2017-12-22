@@ -21,8 +21,8 @@ int fullBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eigen
     for(int n = 0; n < keyframes.rows(); n++) {
         Eigen::MatrixXd currentFrame(4, 4);
         currentFrame << keyFrameRowToMatrix(keyframes.row(n));
-        cout << currentFrame << std::endl;
-        cout << keyframes.row(n)(0) << endl;
+        // cout << currentFrame << std::endl;
+        // cout << keyframes.row(n)(0) << endl;
         KeyFrame frame = std::make_pair( std::make_pair(n,keyframes.row(n)(0)) , currentFrame);
         vpKFs.push_back(frame);
     }
@@ -31,9 +31,9 @@ int fullBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eigen
     std::vector<MapPoint> vpMP;
     for(int n = 0; n < mapPoints.rows(); n++) {
         Eigen::MatrixXd currentPoint(1, 3);
-        cout << mapPoints.row(n) << endl;
+        // cout << mapPoints.row(n) << endl;
         currentPoint <<  mappointRowToMatrix(mapPoints.row(n));
-        cout << currentPoint(0) << endl;
+        // cout << currentPoint(0) << endl;
         MapPoint point = std::make_pair( std::make_pair(n, mapPoints.row(n)(0) ) , currentPoint);
         vpMP.push_back(point );
     }
@@ -89,7 +89,7 @@ int fullBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eigen
         optimizer.addVertex(vPoint);
         
         
-        cout << pMP.second << endl;
+        // cout << pMP.second << endl;
         const std::vector<std::pair<KeyFrame,int>> observations = getObservationsWithRelation(pMP, vpKFs, mapPoints, pointsRelation);
         
         
@@ -153,7 +153,7 @@ int fullBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eigen
     
     
     // Optimize!
-    int nIterations = 10;
+    int nIterations = 5;
     optimizer.initializeOptimization();
     optimizer.optimize(nIterations);
     
@@ -167,23 +167,23 @@ int fullBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eigen
         g2o::VertexSE3Expmap* vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKF.first.second));
         g2o::SE3Quat SE3quat = vSE3->estimate();
         pKF.second = toEigenBundel(SE3quat);
-        cout<< pKF.second << endl;
-        keyframes(pKF.first.first, 1) = pKF.second(0, 0);
-        keyframes(pKF.first.first, 2) = pKF.second(0, 1);
-        keyframes(pKF.first.first, 3) = pKF.second(0, 2);
-        keyframes(pKF.first.first, 4) = pKF.second(0, 3);
-        keyframes(pKF.first.first, 5) = pKF.second(1, 0);
-        keyframes(pKF.first.first, 6) = pKF.second(1, 1);
-        keyframes(pKF.first.first, 7) = pKF.second(1, 2);
-        keyframes(pKF.first.first, 8) = pKF.second(1, 3);
-        keyframes(pKF.first.first, 9) = pKF.second(2, 0);
-        keyframes(pKF.first.first, 10) = pKF.second(2, 1);
-        keyframes(pKF.first.first, 11) = pKF.second(2, 2);
-        keyframes(pKF.first.first, 12) = pKF.second(2, 3);
-        keyframes(pKF.first.first, 13) = pKF.second(3, 0);
-        keyframes(pKF.first.first, 14) = pKF.second(3, 1);
-        keyframes(pKF.first.first, 15) = pKF.second(3, 2);
-        keyframes(pKF.first.first, 16) = pKF.second(3, 3);
+        // cout<< pKF.second << endl;
+        keyframes(pKF.first.first, 2) = pKF.second(0, 0);
+        keyframes(pKF.first.first, 3) = pKF.second(0, 1);
+        keyframes(pKF.first.first, 4) = pKF.second(0, 2);
+        keyframes(pKF.first.first, 5) = pKF.second(0, 3);
+        keyframes(pKF.first.first, 6) = pKF.second(1, 0);
+        keyframes(pKF.first.first, 7) = pKF.second(1, 1);
+        keyframes(pKF.first.first, 8) = pKF.second(1, 2);
+        keyframes(pKF.first.first, 9) = pKF.second(1, 3);
+        keyframes(pKF.first.first, 10) = pKF.second(2, 0);
+        keyframes(pKF.first.first, 11) = pKF.second(2, 1);
+        keyframes(pKF.first.first, 12) = pKF.second(2, 2);
+        keyframes(pKF.first.first, 13) = pKF.second(2, 3);
+        keyframes(pKF.first.first, 14) = pKF.second(3, 0);
+        keyframes(pKF.first.first, 15) = pKF.second(3, 1);
+        keyframes(pKF.first.first, 16) = pKF.second(3, 2);
+        keyframes(pKF.first.first, 17) = pKF.second(3, 3);
     }
     
     //Points
