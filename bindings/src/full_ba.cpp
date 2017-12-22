@@ -271,7 +271,7 @@ int fullBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eigen
         KeyFrame pKF = vpKFs[i];
         g2o::VertexSE3Expmap* vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKF.first.second));
         g2o::SE3Quat SE3quat = vSE3->estimate();
-        pKF.second = toEigen(SE3quat);
+        pKF.second = toEigenBundel(SE3quat);
         cout<< pKF.second << endl;
         keyframes(pKF.first.first, 1) = pKF.second(0, 0);
         keyframes(pKF.first.first, 2) = pKF.second(0, 1);
