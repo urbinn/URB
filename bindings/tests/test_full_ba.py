@@ -22,7 +22,9 @@ class FullBA(unittest.TestCase):
     self.assertIsNotNone(links)
     
     # TODO: Check if keyframes are modified
-    result =  urbg2o.fulllBundleAdjustment(cv_keyframes, mappoints, links)
+    print('start full ba')
+    result =  urbg2o.fullBundleAdjustment(cv_keyframes, mappoints, links)
+    print('end full ba')
     self.assertIsNotNone(result)
 
 if __name__ == '__main__':
