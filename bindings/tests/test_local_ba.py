@@ -13,6 +13,10 @@ class LocalBA(unittest.TestCase):
     mappoints = np.asfortranarray(mappoints)
     links = np.array(links, order='f')
     
+    print('keyframes', len(cv_keyframes), '\n')
+    print('f_keyframes', len(f_keyframes), '\n')
+    print('mappoints', len(mappoints), '\n')
+     
     self.assertIsNotNone(cv_keyframes)
     self.assertIsNotNone(f_keyframes)
     self.assertIsNotNone(mappoints)

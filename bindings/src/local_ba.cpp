@@ -123,6 +123,7 @@ std::vector<std::pair<KeyFrame, int>> getObservationsWithRelation(MapPoint point
 int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eigen::MatrixXd> fixedKeyframes, Eigen::Ref<Eigen::MatrixXd> worldMapPoints, Eigen::Ref<Eigen::MatrixXd> pointsRelation )  {
     //primary keyframe
     KeyFrame primaryKeyframe;
+    int primaryKeyframeId = keyframes.row(0)(0) ;
     Eigen::MatrixXd primKeyFrame(4, 4);
     //cout << keyframes.row(0) << endl;
     primKeyFrame << keyFrameRowToMatrix(keyframes.row(0) );
@@ -194,7 +195,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
     // Fixed Keyframes. Keyframes that see Local MapPoints but that are not Local Keyframes
     vector<KeyFrame> lFixedCameras;
     
-    for(int n = 1; n < fixedKeyframes.rows(); n++) {
+    for(int n = 0; n < fixedKeyframes.rows(); n++) {
         Eigen::MatrixXd currentFrame(4, 4);
         currentFrame << keyFrameRowToMatrix(fixedKeyframes.row(n));
         //cout << currentFrame << std::endl;
@@ -223,7 +224,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
         vSE3->setEstimate(toSE3QuatFromMatrix(pKFi.second));
         vSE3->setId(pKFi.first.second);
-        if (pKFi == primaryKeyframe ) {
+        if (pKFi.first.second == primaryKeyframeId ) {
             vSE3->setFixed(true);
         } else {
             vSE3->setFixed(false);
