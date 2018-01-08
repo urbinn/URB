@@ -22,9 +22,13 @@ class LocalBA(unittest.TestCase):
     self.assertIsNotNone(mappoints)
     self.assertIsNotNone(links)
     
+    print('keyframes', cv_keyframes, '\n')
+    
     # TODO: Check if keyframes are modified
     result =  urbg2o.localBundleAdjustment(cv_keyframes, f_keyframes, mappoints, links)
     self.assertIsNotNone(result)
+
+    print('modified keyframes','\n', cv_keyframes, '\n')
 
 if __name__ == '__main__':
     unittest.main()

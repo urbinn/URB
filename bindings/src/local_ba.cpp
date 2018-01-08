@@ -19,6 +19,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
     //primary keyframe
     KeyFrame primaryKeyframe;
     int primaryKeyframeId = keyframes.row(0)(0) ;
+    int secondKeyframeId = keyframes.row(1)(0) ;
     Eigen::MatrixXd primKeyFrame(4, 4);
     //cout << keyframes.row(0) << endl;
     primKeyFrame << keyFrameRowToMatrix(keyframes.row(0) );
@@ -120,6 +121,8 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         vSE3->setEstimate(toSE3QuatFromMatrix(pKFi.second));
         vSE3->setId(pKFi.first.second);
         if (pKFi.first.second == primaryKeyframeId ) {
+            vSE3->setFixed(true);
+        } else  if (pKFi.first.second == secondKeyframeId) {
             vSE3->setFixed(true);
         } else {
             vSE3->setFixed(false);
