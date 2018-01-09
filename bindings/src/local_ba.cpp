@@ -273,6 +273,8 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         }
     }
     
+
+    std::cout << vToErase.size() << std::endl;
     if(!vToErase.empty())
     {
         for(size_t i=0;i<vToErase.size();i++)
