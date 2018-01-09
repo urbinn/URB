@@ -154,17 +154,19 @@ def load_keyframes(file):
 # return a set of frames that share mappoints with the given keyframe
 def get_covisible_keyframes(keyframe):
     mappoints = [ o.get_mappoint() for o in keyframe.get_observations() ]
-    return { o.get_frame() for m in mappoints for o in m.get_observations() }
+    frames = { o.get_frame() for m in mappoints for o in m.get_observations() }
+    return sorted(frames, key=lambda o: o.keyframeid)
 
 # return a set of all mappoint that are visible in the given set of keyframes
 def get_mappoints(keyframes):
-    return { o.get_mappoint() for kf in keyframes for o in kf.get_observations() if o.get_mappoint() is not None }
+    return { o.get_mappoint() for kf in keyframes for o in kf.get_observations() 
+            if o.get_mappoint() is not None and len(o.get_mappoint().observations) > 1}
 
 # return a set of keyframes that share mappoints with one or more of the covisible_keyframes
 # that are not in the set of covisible keyframes
 def get_fixed_keyframes(mappoints, covisible_keyframes):
     frames = { o.get_frame() for m in mappoints for o in m.get_observations() }
-    return frames - covisible_keyframes
+    return frames - set(covisible_keyframes)
 
 # save the keyframe poses to file
 # (keyframe_id, frame_id, 4x4 pose)
