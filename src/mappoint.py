@@ -8,7 +8,7 @@ class MapPoint:
         self.z = obs.get_depth()
         self.affine_coords = obs.get_affine_coords()
         self.observations = { obs }
-        self.object = None
+        self.classification = None
 
     def get_affine_coords(self):
         return self.affine_coords

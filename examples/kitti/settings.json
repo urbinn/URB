@@ -1,0 +1,12 @@
+{
+  "CAMERA": {
+    "BF": 386.1448,
+    "FX": 718.856,
+    "FY": 718.856,
+    "CX": 607.1928,
+    "CY": 185.2157
+  }
+}
+
+//CAMERA_FX_INV = 1.0 / CAMERA_FX
+//CAMERA_FY_INV = 1.0 / CAMERA_FY

@@ -2,6 +2,7 @@ from progressbar import ProgressBar
 from src.settings.load import *
 from src.frame import *
 from src.json import *
+from src.boundingbox import *
 import sys
 import os
 import shutil
@@ -52,7 +53,7 @@ class Sequence:
         self.framecount = 0
         self.keyframes = []
         self.rotation = 0
-        self.speed = 0
+        self.speed = 0        
         
     def add_frame(self, frame, sequence_confidence = SEQUENCE_CONFIDENCE, clean=False):
         if len(self.keyframes) == 0:
@@ -65,7 +66,7 @@ class Sequence:
             matches = match_frame(frame, keyframe.get_observations(), sequence_confidence = sequence_confidence)
             
             points_left = len(matches)
-            if points_left >=10:
+            if points_left >= 10:
                 pose, points_left = get_pose(matches)
                 frame.set_pose(pose)
                 rotation = pose[0,2]

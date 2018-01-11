@@ -1,0 +1,10 @@
+{
+  "CAMERA": {
+    // bf is baseline (in meters) * focal distance om de diepte te berekenen met formule focal distance * baseline / disparity
+    "BF": 84.08712,
+    "FX": 700.726,
+    "FY": 700.726,
+    "CX": 679.831,
+    "CY": 370.07
+  }
+}
