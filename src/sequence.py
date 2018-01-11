@@ -53,10 +53,22 @@ class Sequence:
         self.keyframes = []
         self.rotation = 0
         self.speed = 0
-        
+       
+    def add_keyframe(self, frame, sequence_confidence = SEQUENCE_CONFIDENCE):
+        if len(self.keyframes) == 0:
+            self._add_keyframe(frame)
+            frame.set_pose( np.eye(4, dtype=np.float64) )
+        else:
+            keyframe = self.keyframes[-1]
+            matches = match_frame(frame, keyframe.get_observations(), sequence_confidence = sequence_confidence)
+            pose, points_left = get_pose(matches)
+            #print(points_left, len(matches), pose)
+            frame.set_pose(pose)
+            self._add_keyframe( frame )                     
+
     def add_frame(self, frame, sequence_confidence = SEQUENCE_CONFIDENCE, clean=False):
         if len(self.keyframes) == 0:
-            self.add_keyframe(frame)
+            self._add_keyframe(frame)
             frame.set_pose( np.eye(4, dtype=np.float64) )
         else:
             keyframe = self.keyframes[-1]
@@ -87,7 +99,7 @@ class Sequence:
                         f.clean()
                     keyframe.clean()
                 keyframe = keyframe.frames.pop()
-                self.add_keyframe( keyframe )
+                self._add_keyframe( keyframe )
                 last_z = keyframe.frames[-1].get_pose()[2, 3] if len(keyframe.frames) > 0 else 0
                 last_rotation = keyframe.frames[-1].get_pose()[0, 2] if len(keyframe.frames) > 0 else 0
 
@@ -109,7 +121,7 @@ class Sequence:
             frame.keyframe = keyframe
             keyframe.frames.append(frame)
                 
-    def add_keyframe(self, frame):
+    def _add_keyframe(self, frame):
         frame.compute_depth()
         frame.filter_not_useful()
         frame.filter_most_confident()
@@ -166,7 +178,7 @@ def get_mappoints(keyframes):
 # that are not in the set of covisible keyframes
 def get_fixed_keyframes(mappoints, covisible_keyframes):
     frames = { o.get_frame() for m in mappoints for o in m.get_observations() }
-    return frames - set(covisible_keyframes)
+    return sorted(frames - set(covisible_keyframes), key=lambda o: o.keyframeid)
 
 # save the keyframe poses to file
 # (keyframe_id, frame_id, 4x4 pose)
