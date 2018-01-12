@@ -1,9 +1,9 @@
-from src.settings.load import *
 from src.observation import *
-from src.imageio import *
+#from src.imageio import *
 import cv2
 import numpy as np
 from src.filter import *
+from src.settings import *
 import urbg2o
 
 _frameid = 0
@@ -49,7 +49,7 @@ class Frame:
         try:
             return self._image
         except:
-            self._image = read_image(self._filepath)
+            self._image = cv2.imread(self._filepath, 0)
             return self._image
     
     def clean(self):
@@ -135,7 +135,7 @@ class Frame:
         try:
             return self._observations
         except:
-            zeroimage = zero_image(self.get_smoothed())
+            zeroimage = np.zeros(self.get_smoothed().shape, np.uint8)
             #higher_vertical_edges = higher_vertical_edge(self.get_smoothed(), self.get_median())
             higher_vertical_edges = sobelv(self.get_smoothed(), self.get_median() * 1.1)
             #lower_vertical_edges = lower_vertical_edge(self.get_smoothed(), self.get_median())

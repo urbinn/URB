@@ -1,6 +1,6 @@
-from src.settings.load import *
+from src.settings import *
 from src.coords import *
-from src.imageio import *
+#from src.imageio import *
 
 class MapPoint:
     def __init__(self, obs):

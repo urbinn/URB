@@ -1,27 +1,28 @@
 import json
 import cv2
 
-"""
-Builds a dictionary from the YOLO output.
-"""
-class ClassificationBuilder:
-    def __init__(self, yolo_output):
-        try:
-            yolo = json.load(open(yolo_output))
-        except ValueError, e:
-            print("Invalid YOLO output given to ClassificationBuilder: {}".format(e))
-        else:
-            self.classifications = self.format_output(yolo)
-    def format_output(json):
-        classified_objects = []
-        image_name = json[0]
+# """
+# Builds a dictionary from the YOLO output.
+# """
+# class ClassificationBuilder:
+#     def __init__(self, yolo_output):
+#         try:
+#             yolo = json.load(open(yolo_output))
+#         except ValueError, e:
+#             print("Invalid YOLO output given to ClassificationBuilder: {}".format(e))
+#         else:
+#             self.classifications = self.format_output(yolo)
 
-        for classification in json:
-            # Filter out image name
-            if (isinstance(classification, list)):
-                classified_objects.append(BoundingBox(classification))
+#     def format_output(json):
+#         classified_objects = []
+#         image_name = json[0]
 
-        return (image_name, classified_objects)
+#         for classification in json:
+#             # Filter out image name
+#             if (isinstance(classification, list)):
+#                 classified_objects.append(BoundingBox(classification))
+
+#         return (image_name, classified_objects)
 
 class BoundingBox:
     """

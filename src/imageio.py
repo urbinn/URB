@@ -1,4 +1,4 @@
-from src.settings.load import *
+from src.settings import *
 import cv2
 import math
 import matplotlib.pyplot as plt

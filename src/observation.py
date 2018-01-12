@@ -1,8 +1,14 @@
-from src.settings.load import *
+from src.settings import *
 from src.coords import *
-from src.imageio import *
+#from src.imageio import *
 from src.mappoint import *
 import sys
+
+def get_patch(image, leftx, topy, patch_size = PATCH_SIZE):
+    patch = image[topy:topy+patch_size, leftx:leftx+patch_size]
+    if patch.shape[0] != patch_size or patch.shape[1] != patch_size:
+        raise ValueError('illegal patch size leftx={} topy={} shape={} patch_size={}'.format(leftx, topy, patch.shape, patch_size))
+    return patch
 
 class Observation:
     def __init__(self, frame, x, y):

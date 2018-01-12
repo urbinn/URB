@@ -1,5 +1,5 @@
-from progressbar import ProgressBar
-from src.settings.load import *
+#from progressbar import ProgressBar
+from src.settings import *
 from src.frame import *
 from src.json import *
 from src.boundingbox import *
@@ -39,22 +39,27 @@ def match_frame(frame, observations, sequence_confidence = SEQUENCE_CONFIDENCE):
         else:
             fp.set_mappoint(None)
     return matches
-            
+
 def create_sequence(frames, sequence_confidence=SEQUENCE_CONFIDENCE):
     s = Sequence()
-    for i, f in enumerate(ProgressBar()(frames)):
+    for i, f in enumerate(frames):
         #print('add frame ' + str(i))
         s.add_frame(f, sequence_confidence = sequence_confidence );
     return s
 
 class Sequence:
-    def __init__(self):
-        self.mappointcount = 0
-        self.framecount = 0
-        self.keyframes = []
-        self.rotation = 0
-        self.speed = 0        
-        
+    mappointcount = 0
+    framecount = 0
+    keyframes = []
+    rotation = 0
+    speed = 0
+
+    def initialise(self, frames):
+        # Initialize with frames
+        if len(frames) > 0:
+            for i, f in enumerate(frames):
+                self.add_frame(f, sequence_confidence = SEQUENCE_CONFIDENCE );
+
     def add_frame(self, frame, sequence_confidence = SEQUENCE_CONFIDENCE, clean=False):
         if len(self.keyframes) == 0:
             self.add_keyframe(frame)
