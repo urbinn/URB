@@ -9,13 +9,13 @@
 #include <opencv2/core/core.hpp>
 #include <Eigen/StdVector>
 
-#include "local_ba.h"
+#include "outliers_detection.h"
 #include "dep_ba.h"
 
 using namespace std;
 
 
-int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eigen::MatrixXd> fixedKeyframes, Eigen::Ref<Eigen::MatrixXd> worldMapPoints, Eigen::Ref<Eigen::MatrixXd> pointsRelation )  {
+Eigen::MatrixXd outliersForLocalBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eigen::MatrixXd> fixedKeyframes, Eigen::Ref<Eigen::MatrixXd> worldMapPoints, Eigen::Ref<Eigen::MatrixXd> pointsRelation )  {
     //primary keyframe
     KeyFrame primaryKeyframe;
     int primaryKeyframeId = keyframes.row(0)(0) ;
@@ -232,7 +232,8 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
     }
     
     if (optimizerCheck < 3 ) {
-        return  0;
+        Eigen::MatrixXd returnMatrix(0, 0) ;
+        return  returnMatrix ;
     }
     
     optimizer.initializeOptimization();
@@ -259,6 +260,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
     }
     
     vector<pair<KeyFrame,MapPoint> > vToErase;
+    vector<float> chiArray; 
     vToErase.reserve(vpEdgesMono.size()+vpEdgesStereo.size());
     
     // Check inlier observations
@@ -268,11 +270,19 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         
         if(e->chi2()>5.991 || !e->isDepthPositive())
         {
+            chiArray.push_back(e->chi2());
             KeyFrame pKFi = vpEdgeKFMono[i];
             vToErase.push_back(make_pair(pKFi,pMP));
         }
     }
     
+
+
+    int toEraseCount = vToErase.size();
+    std::vector<float> eraseElements;
+
+
+   Eigen::MatrixXd returnMatrix(toEraseCount, 3);
 
     std::cout << "to erase" << vToErase.size() << std::endl;
     if(!vToErase.empty())
@@ -281,6 +291,14 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         {
             KeyFrame pKFi = vToErase[i].first;
             MapPoint pMPi = vToErase[i].second;
+
+            cout << "keyframe id " << vToErase[i].first.first.second << std::endl;
+            cout << "mappoint id " << vToErase[i].second.first.second << std::endl;
+            // returnMatrix << (float)vToErase[i].first.first.second , (float)vToErase[i].second.first.second, chiArray[i];
+
+            returnMatrix(i, 0) = (float)vToErase[i].first.first.second;
+            returnMatrix(i, 1) = (float)vToErase[i].second.first.second;
+            returnMatrix(i, 2) = chiArray[i];
             
             //TODO
             //erase mappoint match for keyframe
@@ -290,40 +308,6 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
             //            pMPi->EraseObservation(pKFi);
         }
     }
-    
-    // Recover optimized data
-    
-    //Keyframes
-    for(KeyFrame lit : lLocalKeyFrames) {
-        KeyFrame pKF = lit;
-        g2o::VertexSE3Expmap* vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKF.first.second));
-        g2o::SE3Quat SE3quat = vSE3->estimate();
-        pKF.second = toEigenBundel(SE3quat);
-        cout<< pKF.second << endl;
-        keyframes(pKF.first.first, 2) = pKF.second(0, 0);
-        keyframes(pKF.first.first, 3) = pKF.second(0, 1);
-        keyframes(pKF.first.first, 4) = pKF.second(0, 2);
-        keyframes(pKF.first.first, 5) = pKF.second(0, 3);
-        keyframes(pKF.first.first, 6) = pKF.second(1, 0);
-        keyframes(pKF.first.first, 7) = pKF.second(1, 1);
-        keyframes(pKF.first.first, 8) = pKF.second(1, 2);
-        keyframes(pKF.first.first, 9) = pKF.second(1, 3);
-        keyframes(pKF.first.first, 10) = pKF.second(2, 0);
-        keyframes(pKF.first.first, 11) = pKF.second(2, 1);
-        keyframes(pKF.first.first, 12) = pKF.second(2, 2);
-        keyframes(pKF.first.first, 13) = pKF.second(2, 3);
-        keyframes(pKF.first.first, 14) = pKF.second(3, 0);
-        keyframes(pKF.first.first, 15) = pKF.second(3, 1);
-        keyframes(pKF.first.first, 16) = pKF.second(3, 2);
-        keyframes(pKF.first.first, 17) = pKF.second(3, 3);
-    }
-    
-    //Points
-    for(MapPoint lit : lLocalMapPoints) {
-        MapPoint pMP = lit;
-        g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP.first.second+maxKFid+1));
-        pMP.second = toEigenVector(vPoint->estimate()) ;
-    }
-    //cout << "done" << endl;
-    return 1;
+
+    return  returnMatrix;
 }

@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import urbg2o
 
-class LocalBA(unittest.TestCase):
+class OutlierDetection(unittest.TestCase):
   def test_local_ba(self):
     cv_keyframes = np.load('tests/fixtures/local-ba/cv_keyframes.npy')
     f_keyframes = np.load('tests/fixtures/local-ba/f_keyframes.npy')
@@ -26,10 +26,9 @@ class LocalBA(unittest.TestCase):
     print('keyframes', cv_keyframes, '\n')
     
     # TODO: Check if keyframes are modified
-    result =  urbg2o.localBundleAdjustment(cv_keyframes, f_keyframes, mappoints, links)
+    result =  urbg2o.outliersForLocalBundleAdjustment(cv_keyframes, f_keyframes, mappoints, links)
+    print('result', result)
     self.assertIsNotNone(result)
-
-    print('modified keyframes','\n', cv_keyframes, '\n')
 
 if __name__ == '__main__':
     unittest.main()
