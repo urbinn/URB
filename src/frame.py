@@ -30,7 +30,9 @@ class Frame:
         self._pose = None
         self._keyframe = None
         self._rightpath = rightpath
+        self._world_pose = None
         self.frameid = _frameid
+        self._previous_keyframe = None
         _frameid += 1
         
     def get_right_frame(self):
@@ -41,9 +43,6 @@ class Frame:
                 raise ValueError('rightpath is not set')
             self._rightframe = Frame('/'.join([self._rightpath, self._filepath.split('/')[-1]]))
             return self._rightframe
-        
-    def set_pose(self, pose):
-        self._pose = pose
      
     def get_image(self):
         try:
@@ -96,14 +95,28 @@ class Frame:
     def set_pose(self, pose):
         self._pose = pose
     
-    def get_pose_wrt(self, frame_origin):
-        if self == frame_origin:
-            return self.get_pose()
-        else:
-            return np.dot( self.keyframe.get_pose_wrt(frame_origin), self.get_pose() )
+    def set_previous_keyframe(self, keyframe):
+        self._previous_keyframe = keyframe
+        print('set_previous_keyframe', self.frameid)
     
-    def get_observations_xyz(self):
-        return np.array([p.get_affine_coords() for p in self.get_observations() if p.get_mappoint() is None], dtype=np.float64, order='f')
+    def get_world_pose(self):
+        if self._world_pose is None:
+            if self._previous_keyframe is None:
+                print('get_world_pose first ', self.frameid)
+                self._world_pose = self._pose
+            else:
+                self._world_pose = np.dot( self._previous_keyframe.get_world_pose(), self.get_pose() )
+                print('get_world_pose ', self.frameid, self._world_pose )
+        return self._world_pose
+    
+    #def get_pose_wrt(self, frame_origin):
+    #    if self == frame_origin:
+    #        return self.get_pose()
+    #    else:
+    #        return np.dot( self.keyframe.get_pose_wrt(frame_origin), self.get_pose() )
+    #
+    #def get_observations_xyz(self):
+    #    return np.array([p.get_affine_coords() for p in self.get_observations() if p.get_mappoint() is None], dtype=np.float64, order='f')
     
     def get_observations_wc_np(self, frame_origin):
         try:

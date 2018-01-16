@@ -56,8 +56,8 @@ class Sequence:
        
     def add_keyframe(self, frame, sequence_confidence = SEQUENCE_CONFIDENCE):
         if len(self.keyframes) == 0:
-            self._add_keyframe(frame)
             frame.set_pose( np.eye(4, dtype=np.float64) )
+            self._add_keyframe(frame)
         else:
             keyframe = self.keyframes[-1]
             matches = match_frame(frame, keyframe.get_observations(), sequence_confidence = sequence_confidence)
@@ -68,8 +68,8 @@ class Sequence:
 
     def add_frame(self, frame, sequence_confidence = SEQUENCE_CONFIDENCE, clean=False):
         if len(self.keyframes) == 0:
-            self._add_keyframe(frame)
             frame.set_pose( np.eye(4, dtype=np.float64) )
+            self._add_keyframe(frame)
         else:
             keyframe = self.keyframes[-1]
             last_z = keyframe.frames[-1].get_pose()[2, 3] if len(keyframe.frames) > 0 else 0
@@ -122,6 +122,7 @@ class Sequence:
             keyframe.frames.append(frame)
                 
     def _add_keyframe(self, frame):
+        frame.set_previous_keyframe(None if len(self.keyframes) == 0 else self.keyframes[-1])
         frame.compute_depth()
         frame.filter_not_useful()
         frame.filter_most_confident()
@@ -132,10 +133,9 @@ class Sequence:
             else:
                 obs.register_mappoint()
                 if obs.get_depth() is None:
-                    acoords = frame.get_pose() * obs.get_mappoint().get_affine_coords()
-                    obs.z = affine_coords_to_cam(acoords)
+                    pass
                 else:
-                    obs.get_mappoint().update_affine_coords(obs)
+                    obs.get_mappoint().update_world_coords(obs)
         frame.keyframeid = self.framecount
         self.framecount += 1
         self.keyframes.append(frame)
@@ -183,12 +183,12 @@ def get_fixed_keyframes(mappoints, covisible_keyframes):
 # save the keyframe poses to file
 # (keyframe_id, frame_id, 4x4 pose)
 def keyframes_to_np(keyframes):
-    return np.hstack([ [ [ kf.keyframeid] for kf in keyframes ], [ [kf.frameid] for kf in keyframes ], [ kf.get_pose().flatten() for kf in keyframes ] ])
+    return np.hstack([ [ [ kf.keyframeid] for kf in keyframes ], [ [kf.frameid] for kf in keyframes ], [ kf.get_world_pose().flatten() for kf in keyframes ] ])
 
 # save the world coordinates of mappoints to file
 # (mappoint_id, x, y, z, 1)
 def mappoints_to_np(mappoints):
-    kfp = np.hstack([ [ [m.id] for m in mappoints ], [ m.get_affine_coords() for m in mappoints ] ])
+    kfp = np.hstack([ [ [m.id] for m in mappoints ], [ m.get_world_coords() for m in mappoints ] ])
     return kfp
 
 # save the edges between keyframes and mappoints

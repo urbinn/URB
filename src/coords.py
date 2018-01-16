@@ -8,7 +8,7 @@ def affine_coords_to_cam(coords):
     z = coords[2]
     x = coords[0] * CAMERA_FX / z + CAMERA_CX
     y = coords[1] * CAMERA_FY / z + CAMERA_CY
-    return x, y, z
+    return np.array([x, y, z, 1.0], dtype=np.float64)
 
 def estimated_distance(disparity):
     return -CAMERA_BF / disparity
