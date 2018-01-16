@@ -63,13 +63,22 @@ class Observation:
             self.z = estimated_distance(self.disparity)
         return self.z
     
+    def get_world_coords(self):
+        try:
+            return self.world_coords
+        except:
+            coords = cam_to_affine_coords(self.cx, self.cy, self.get_depth())
+            self.world_coords = np.dot(self.frame.get_world_pose(), coords)
+            return self.world_coords
+    
     def get_affine_coords(self):
         try:
-            return self.affine_coords
+            return self._affine_coords
         except:
-            self.affine_coords = cam_to_affine_coords(self.cx, self.cy, self.get_depth())
-            return self.affine_coords
+            self._affine_coords = cam_to_affine_coords(self.cx, self.cy, self.get_depth())
+            return self._affine_coords
     
+
     def get_keypoint(self):
         return self.keypoint
         
