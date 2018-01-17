@@ -178,6 +178,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         vPoint->setEstimate( toVector3d( pMP.second ));
         int id = pMP.first.second+maxKFid+1;
         vPoint->setId(id);
+        vPoint->setFixed(true);
         vPoint->setMarginalized(true);
         optimizer.addVertex(vPoint);
         
