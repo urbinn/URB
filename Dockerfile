@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		pybind11 \
 		numpy \
 		pytest \
+		json-tricks \
 	&& pip3 install -r requirements.txt \
 	&& cd bindings \
 	&& python3 setup.py install

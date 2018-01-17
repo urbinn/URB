@@ -94,6 +94,14 @@ def draw_observations_id(observations):
             cv2.putText(img, str(id), (int(p.cx), int(p.cy)), FONT, FONTSIZE, (255, 0, 0), 1, cv2.LINE_AA)
     return img
 
+def draw_observations_classification(observations):
+    img = draw_observations(observations)
+    for p in observations:
+        clas = p.classification
+        if clas is not None:
+            cv2.putText(img, str(clas), (int(p.cx), int(p.cy)), FONT, 1, (255, 0, 0), 1, cv2.LINE_AA)
+    return img
+
 def get_patch(image, leftx, topy, patch_size = PATCH_SIZE):
     patch = image[topy:topy+patch_size, leftx:leftx+patch_size]
     if patch.shape[0] != patch_size or patch.shape[1] != patch_size:
@@ -101,11 +109,16 @@ def get_patch(image, leftx, topy, patch_size = PATCH_SIZE):
     return patch
 
 ZERO_IMAGE = None
-def zero_image(img):
+def zero_image(from_img):
     global ZERO_IMAGE
-    if ZERO_IMAGE is None or ZERO_IMAGE.shape != img.shape:
-        ZERO_IMAGE = np.zeros(img.shape, np.uint8)
+    if ZERO_IMAGE is None or ZERO_IMAGE.shape != from_img.shape:
+        ZERO_IMAGE = np.zeros(from_img.shape, np.uint8)
     return ZERO_IMAGE
+
+def zero_image_from_dimension(width, height):
+    img = np.zeros((width, height, 3), np.uint8)
+    img[:] = 255 #or img.fill(255)
+    return img
 
 def plot_frame(frame):
     mpld3.enable_notebook()

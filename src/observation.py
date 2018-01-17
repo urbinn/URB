@@ -15,10 +15,14 @@ class Observation:
         self.keypoint = cv2.KeyPoint(x, y, 1, 0)
         self.z = None
         self.disparity = None
+        self.classification = None
     
     def get_frame(self):
         return self.frame
     
+    def set_classification(self, classification):
+        self.classification = classification
+
     def set_mappoint(self, mappoint):
         self.mappoint = mappoint
 

@@ -41,6 +41,7 @@ def match_frame(frame, observations, sequence_confidence = SEQUENCE_CONFIDENCE):
             
 def create_sequence(frames, sequence_confidence=SEQUENCE_CONFIDENCE):
     s = Sequence()
+
     for i, f in enumerate(ProgressBar()(frames)):
         #print('add frame ' + str(i))
         s.add_frame(f, sequence_confidence = sequence_confidence );

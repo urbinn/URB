@@ -23,16 +23,24 @@ def get_pose(observations):
     return pose, pointsLeft
 
 class Frame:
-    def __init__(self, filepath, rightpath = None):
+    def __init__(self, filepath, rightpath = None, classifications = []):
         global _frameid
         self.keyframeid = None
         self._filepath = filepath
         self._pose = None
         self._keyframe = None
         self._rightpath = rightpath
+        self._classifications = classifications
         self.frameid = _frameid
         _frameid += 1
-        
+    
+    def update_observations_per_classification(self):
+        for obs in self.get_observations():
+            for clas in self._classifications:
+                if clas.contains(obs):
+                    obs.set_classification(clas.object_name)
+                    
+
     def get_right_frame(self):
         try:
             return self._rightframe
@@ -130,7 +138,10 @@ class Frame:
         
     def filter_non_mappoint(self):
         self.filter_observations(lambda x: x.has_mappoint())
-        
+    
+    def filter_no_classification(self):
+        self.filter_observations(lambda obs: obs.classification)
+
     def get_observations(self):
         try:
             return self._observations
