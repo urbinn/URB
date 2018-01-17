@@ -167,8 +167,8 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
     vector<MapPoint> vpMapPointEdgeStereo;
     vpMapPointEdgeStereo.reserve(nExpectedSize);
     
-    const float thHuberMono = sqrt(5.991) * 1000.0;
-    const float thHuberStereo = sqrt(7.815);
+    const float thHuberMono = sqrt(5.991);
+    const float thHuberStereo = sqrt(7.815); 
     
     //optimizer check
     int optimizerCheck = 0;
