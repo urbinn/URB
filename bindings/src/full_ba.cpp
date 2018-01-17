@@ -195,6 +195,10 @@ int fullBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eigen
         g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP.first.second+maxKFid+1));
         pMP.second = toEigenVector(vPoint->estimate()) ;
         //        pMP->UpdateNormalAndDepth();
+
+        mapPoints(pMP.first.first, 1) = pMP.second(0, 0);
+        mapPoints(pMP.first.first, 2) = pMP.second(0, 1);
+        mapPoints(pMP.first.first, 3) = pMP.second(0, 2);
     }
     cout << "done" << endl;
     return 1;

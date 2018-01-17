@@ -148,7 +148,6 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
     // Set MapPoint vertices
     const int nExpectedSize = (lLocalKeyFrames.size()+lFixedCameras.size())*lLocalMapPoints.size();
     
-    
     vector<g2o::EdgeSE3ProjectXYZ*> vpEdgesMono;
     vpEdgesMono.reserve(nExpectedSize);
     
@@ -191,6 +190,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         {
             KeyFrame pKFi = mit.first;
             
+            cout << "add edge" << "keyframe_id" << pKFi.first.second << "mappoint_id" <<  id << endl;
             //keypoint of mappoint in the frame
             Eigen::Matrix<double,1,2> kpUn;
             Eigen::MatrixXd currentPoint(1, pointsRelation.cols());
