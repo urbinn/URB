@@ -180,7 +180,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         vPoint->setId(id);
 
         //TODO: Remove
-        vPoint->setFixed(true);
+        // vPoint->setFixed(true);
 
         vPoint->setMarginalized(true);
         optimizer.addVertex(vPoint);
