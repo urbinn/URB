@@ -178,7 +178,10 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         vPoint->setEstimate( toVector3d( pMP.second ));
         int id = pMP.first.second+maxKFid+1;
         vPoint->setId(id);
+
+        //TODO: Remove
         vPoint->setFixed(true);
+
         vPoint->setMarginalized(true);
         optimizer.addVertex(vPoint);
         
@@ -191,7 +194,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         {
             KeyFrame pKFi = mit.first;
             
-            cout << "add edge" << "keyframe_id" << pKFi.first.second << "mappoint_id" <<  id << endl;
+            cout << "add edge" << " keyframe_id " << pKFi.first.second << "mappoint_id" <<  id << endl;
             //keypoint of mappoint in the frame
             Eigen::Matrix<double,1,2> kpUn;
             Eigen::MatrixXd currentPoint(1, pointsRelation.cols());
@@ -241,6 +244,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
     
     bool bDoMore= true;
     
+    int countValue = 0;
     if(bDoMore){
         // Check inlier observations
         for(size_t i=0, iend=vpEdgesMono.size(); i<iend;i++) {
@@ -249,6 +253,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
             
             if(e->chi2()>5.991 || !e->isDepthPositive()) {
                 e->setLevel(1);
+                countValue++;
             }
             
             e->setRobustKernel(0);
@@ -258,6 +263,8 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         optimizer.initializeOptimization(0);
         optimizer.optimize(10);
     }
+
+    cout << "Count removed " << countValue << endl;
     
     vector<pair<KeyFrame,MapPoint> > vToErase;
     vToErase.reserve(vpEdgesMono.size()+vpEdgesStereo.size());
