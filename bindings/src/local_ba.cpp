@@ -194,7 +194,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         {
             KeyFrame pKFi = mit.first;
             
-            cout << "add edge" << " keyframe_id " << pKFi.first.second << "mappoint_id" <<  id << endl;
+            // cout << "add edge" << " keyframe_id " << pKFi.first.second << "mappoint_id" <<  id << endl;
             //keypoint of mappoint in the frame
             Eigen::Matrix<double,1,2> kpUn;
             Eigen::MatrixXd currentPoint(1, pointsRelation.cols());
@@ -264,7 +264,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         optimizer.optimize(10);
     }
 
-    cout << "Count removed " << countValue << endl;
+    // cout << "Count removed " << countValue << endl;
     
     vector<pair<KeyFrame,MapPoint> > vToErase;
     vToErase.reserve(vpEdgesMono.size()+vpEdgesStereo.size());
@@ -282,7 +282,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
     }
     
 
-    std::cout << "to erase" << vToErase.size() << std::endl;
+    // std::cout << "to erase" << vToErase.size() << std::endl;
     if(!vToErase.empty())
     {
         for(size_t i=0;i<vToErase.size();i++)
@@ -307,7 +307,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         g2o::VertexSE3Expmap* vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKF.first.second));
         g2o::SE3Quat SE3quat = vSE3->estimate();
         pKF.second = toEigenBundel(SE3quat);
-        cout<< pKF.second << endl;
+        // cout<< pKF.second << endl;
         keyframes(pKF.first.first, 2) = pKF.second(0, 0);
         keyframes(pKF.first.first, 3) = pKF.second(0, 1);
         keyframes(pKF.first.first, 4) = pKF.second(0, 2);
