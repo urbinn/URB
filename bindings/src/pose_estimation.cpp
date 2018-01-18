@@ -181,11 +181,11 @@ int poseOptimization(Eigen::Ref<Eigen::MatrixXd> coords, Eigen::Ref<Eigen::Matri
             break;
         if (it == 2 && 0)
         {
-            for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++)
-            {
-                g2o::EdgeSE3ProjectXYZOnlyPose *e = vpEdgesMono[i];
-                e->setRobustKernel(0);
-            }
+            // for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++)
+            // {
+            //     g2o::EdgeSE3ProjectXYZOnlyPose *e = vpEdgesMono[i];
+            //     e->setRobustKernel(0);
+            // }
         }
     }
     // Recover optimized pose and return number of inliers
