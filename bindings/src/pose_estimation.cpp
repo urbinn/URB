@@ -179,7 +179,7 @@ int poseOptimization(Eigen::Ref<Eigen::MatrixXd> coords, Eigen::Ref<Eigen::Matri
         }
         if (nBad == vpEdgesMono.size())
             break;
-        if (it == 2)
+        if (it == 2 && 0)
         {
             for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++)
             {
