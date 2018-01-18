@@ -7,13 +7,13 @@ os.environ['PATCH_SIZE'] = '17'
 import sys
 SEQUENCE = '00' if len(sys.argv) < 2 else sys.argv[1]
 
-from pyurb.urb_kitti import *
+from src.kitti import *
 import numpy as np
 import glob
 
 LEFTDIR = '/data/urbinn/datasets/kitti/sequences/%02d/image_2'%(int(SEQUENCE))
 RIGHTDIR = '/data/urbinn/datasets/kitti/sequences/%02d/image_3'%(int(SEQUENCE))
-OUTDIR = 'results8chi4'
+OUTDIR = 'resultsba'
 
 FILES = len(list(glob.glob(LEFTDIR + '/*')))
 FRAMECOUNT = FILES
@@ -28,6 +28,7 @@ for frameid in range(FRAMECOUNT):
     seq.add_frame(left_frame)
     
 keyframes_np = keyframes_to_np(seq.keyframes)
+keyframes_pose_np = keyframes_pose_to_np(seq.keyframes)
 mappoints = get_mappoints(seq.keyframes)
 mappoints_np = mappoints_to_np(mappoints)
 links_np = links_to_np(mappoints)
@@ -37,4 +38,5 @@ if FRAMECOUNT == FILES:
 suffix = '_{}_{}_{}_{}_{}'.format(SEQUENCE, FRAMECOUNT, PATCH_SIZE, STEREO_CONFIDENCE, SEQUENCE_CONFIDENCE)
 np.save(OUTDIR + '/mappoints' + suffix, mappoints_np)
 np.save(OUTDIR + '/links' + suffix, links_np)
-np.save(OUTDIR + '/keyframes' + suffix, keyframes_np)
+np.save(OUTDIR + '/keyframes_wc' + suffix, keyframes_np)
+np.save(OUTDIR + '/keyframes' + suffix, keyframes_pose_np)
