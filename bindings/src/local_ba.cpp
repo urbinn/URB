@@ -10,119 +10,16 @@
 #include <Eigen/StdVector>
 
 #include "local_ba.h"
+#include "dep_ba.h"
 
 using namespace std;
 
-// column size for keyframe
-typedef Eigen::Matrix<double, 4, 4> KeyFrameMatrix;
-typedef Eigen::Matrix<double, 1, 3> MapPointMatrix;
-typedef Eigen::Matrix<double, 1, 4> KeyFrameMapPointMatrix;
-
-//index - key
-typedef std::pair<  std::pair<int, int>, KeyFrameMatrix> KeyFrame;
-typedef std::pair< std::pair<int, int>, MapPointMatrix> MapPoint;
-
-const float CameraFx = 718.856;
-const float CameraFy = 718.856;
-const float CameraCx = 607.1928;
-const float CameraCy = 185.2157;
-
-Eigen::Matrix<double,3,1> toVector3d(const MapPointMatrix point){
-    Eigen::Matrix<double,3,1> v;
-    v << point(0), point(1), point(2);
-    
-    return v;
-}
-
-g2o::SE3Quat toSE3QuatFromMatrix(const Eigen::Matrix<double,4,4> &eigenMat){
-    Eigen::Matrix<double,3,3> R;
-    R << eigenMat(0,0), eigenMat(0,1), eigenMat(0,2),
-    eigenMat(1,0), eigenMat(1,1), eigenMat(1,2),
-    eigenMat(2,0), eigenMat(2,1), eigenMat(2,2);
-    
-    Eigen::Matrix<double,3,1> t(eigenMat(0,3), eigenMat(1,3), eigenMat(2,3));
-    
-    return g2o::SE3Quat(R,t);
-}
-
-Eigen::MatrixXd toEigenBundel(const g2o::SE3Quat &SE3){
-    Eigen::Matrix<double, 4, 4> eigMat = SE3.to_homogeneous_matrix();
-    return eigMat;
-}
-
-
-Eigen::MatrixXd toEigenVector(const Eigen::Matrix<double,3,1> &m)
-{
-    Eigen::Matrix<double, 1, 3> eigMat;
-    eigMat << m(0,0), m(1,0), m(2,0);
-    return eigMat;
-}
-
-
-Eigen::MatrixXd keyFrameRowToMatrix(const Eigen::MatrixXd row)
-{
-    Eigen::MatrixXd frameMtrix(4, 4);
-    
-    frameMtrix << row(1), row(2), row(3), row(4),
-    row(5), row(6), row(7), row(8),
-    row(9), row(10), row(11), row(12),
-    row(13), row(14), row(15), row(16);
-    
-    return frameMtrix;
-}
-
-Eigen::MatrixXd mappointRowToMatrix(const Eigen::MatrixXd row)
-{
-    Eigen::MatrixXd pointMatrix(1, 3);
-    pointMatrix << row(1), row(2), row(3) ;
-    return pointMatrix;
-}
-
-
-std::vector<KeyFrame> getObservations(MapPoint point ,  std::vector<KeyFrame> keyframes,  Eigen::MatrixXd worldMapPoints,Eigen::MatrixXd pointsRelation) {
-    std::vector<KeyFrame> returnKeyframes;
-    for(int r = 0; r <  pointsRelation.rows(); r++) {
-        Eigen::MatrixXd currentRelation(1, pointsRelation.cols());
-        currentRelation << pointsRelation.row(r);
-        if (point.first.second == currentRelation(0)) {
-            //found relation
-            for (KeyFrame frame : keyframes) {
-                if (currentRelation(1) == frame.first.second) {
-                    returnKeyframes.push_back(frame);
-                    break;
-                }
-            }
-        }
-    }
-    
-    return returnKeyframes;
-}
-
-std::vector<std::pair<KeyFrame, int>> getObservationsWithRelation(MapPoint point ,  std::vector<KeyFrame> keyframes,  Eigen::MatrixXd, Eigen::MatrixXd pointsRelation ) {
-    std::vector<std::pair<KeyFrame, int>> returnKeyframes;
-    for(int r = 0; r <  pointsRelation.rows(); r++) {
-        Eigen::MatrixXd currentRelation(1, pointsRelation.cols());
-        currentRelation << pointsRelation.row(r);
-        //cout << currentRelation << endl;
-        //cout << point.first.second << endl;
-        if (point.first.second == currentRelation(0)) {
-            //found relation
-            for (KeyFrame frame : keyframes) {
-                if (currentRelation(1) == frame.first.second) {
-                    
-                    returnKeyframes.push_back(std::make_pair(frame,r) );
-                    break;
-                }
-            }
-        }
-    }
-    
-    return returnKeyframes;
-}
 
 int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eigen::MatrixXd> fixedKeyframes, Eigen::Ref<Eigen::MatrixXd> worldMapPoints, Eigen::Ref<Eigen::MatrixXd> pointsRelation )  {
     //primary keyframe
     KeyFrame primaryKeyframe;
+    int primaryKeyframeId = keyframes.row(0)(0) ;
+    int secondKeyframeId = keyframes.row(1)(0) ;
     Eigen::MatrixXd primKeyFrame(4, 4);
     //cout << keyframes.row(0) << endl;
     primKeyFrame << keyFrameRowToMatrix(keyframes.row(0) );
@@ -194,7 +91,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
     // Fixed Keyframes. Keyframes that see Local MapPoints but that are not Local Keyframes
     vector<KeyFrame> lFixedCameras;
     
-    for(int n = 1; n < fixedKeyframes.rows(); n++) {
+    for(int n = 0; n < fixedKeyframes.rows(); n++) {
         Eigen::MatrixXd currentFrame(4, 4);
         currentFrame << keyFrameRowToMatrix(fixedKeyframes.row(n));
         //cout << currentFrame << std::endl;
@@ -223,7 +120,9 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
         vSE3->setEstimate(toSE3QuatFromMatrix(pKFi.second));
         vSE3->setId(pKFi.first.second);
-        if (pKFi == primaryKeyframe ) {
+        if (pKFi.first.second == primaryKeyframeId ) {
+            vSE3->setFixed(true);
+        } else  if (pKFi.first.second == secondKeyframeId) {
             vSE3->setFixed(true);
         } else {
             vSE3->setFixed(false);
@@ -249,7 +148,6 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
     // Set MapPoint vertices
     const int nExpectedSize = (lLocalKeyFrames.size()+lFixedCameras.size())*lLocalMapPoints.size();
     
-    
     vector<g2o::EdgeSE3ProjectXYZ*> vpEdgesMono;
     vpEdgesMono.reserve(nExpectedSize);
     
@@ -269,7 +167,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
     vpMapPointEdgeStereo.reserve(nExpectedSize);
     
     const float thHuberMono = sqrt(5.991);
-    const float thHuberStereo = sqrt(7.815);
+    const float thHuberStereo = sqrt(7.815); 
     
     //optimizer check
     int optimizerCheck = 0;
@@ -280,6 +178,10 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         vPoint->setEstimate( toVector3d( pMP.second ));
         int id = pMP.first.second+maxKFid+1;
         vPoint->setId(id);
+
+        //TODO: Remove
+        // vPoint->setFixed(true);
+
         vPoint->setMarginalized(true);
         optimizer.addVertex(vPoint);
         
@@ -292,6 +194,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         {
             KeyFrame pKFi = mit.first;
             
+            // cout << "add edge" << " keyframe_id " << pKFi.first.second << "mappoint_id" <<  id << endl;
             //keypoint of mappoint in the frame
             Eigen::Matrix<double,1,2> kpUn;
             Eigen::MatrixXd currentPoint(1, pointsRelation.cols());
@@ -341,6 +244,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
     
     bool bDoMore= true;
     
+    int countValue = 0;
     if(bDoMore){
         // Check inlier observations
         for(size_t i=0, iend=vpEdgesMono.size(); i<iend;i++) {
@@ -349,6 +253,7 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
             
             if(e->chi2()>5.991 || !e->isDepthPositive()) {
                 e->setLevel(1);
+                countValue++;
             }
             
             e->setRobustKernel(0);
@@ -358,6 +263,8 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         optimizer.initializeOptimization(0);
         optimizer.optimize(10);
     }
+
+    // cout << "Count removed " << countValue << endl;
     
     vector<pair<KeyFrame,MapPoint> > vToErase;
     vToErase.reserve(vpEdgesMono.size()+vpEdgesStereo.size());
@@ -374,6 +281,8 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         }
     }
     
+
+    // std::cout << "to erase" << vToErase.size() << std::endl;
     if(!vToErase.empty())
     {
         for(size_t i=0;i<vToErase.size();i++)
@@ -398,23 +307,23 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         g2o::VertexSE3Expmap* vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKF.first.second));
         g2o::SE3Quat SE3quat = vSE3->estimate();
         pKF.second = toEigenBundel(SE3quat);
-        //cout<< pKF.second << endl;
-        keyframes(pKF.first.first, 1) = pKF.second(0, 0);
-        keyframes(pKF.first.first, 2) = pKF.second(0, 1);
-        keyframes(pKF.first.first, 3) = pKF.second(0, 2);
-        keyframes(pKF.first.first, 4) = pKF.second(0, 3);
-        keyframes(pKF.first.first, 5) = pKF.second(1, 0);
-        keyframes(pKF.first.first, 6) = pKF.second(1, 1);
-        keyframes(pKF.first.first, 7) = pKF.second(1, 2);
-        keyframes(pKF.first.first, 8) = pKF.second(1, 3);
-        keyframes(pKF.first.first, 9) = pKF.second(2, 0);
-        keyframes(pKF.first.first, 10) = pKF.second(2, 1);
-        keyframes(pKF.first.first, 11) = pKF.second(2, 2);
-        keyframes(pKF.first.first, 12) = pKF.second(2, 3);
-        keyframes(pKF.first.first, 13) = pKF.second(3, 0);
-        keyframes(pKF.first.first, 14) = pKF.second(3, 1);
-        keyframes(pKF.first.first, 15) = pKF.second(3, 2);
-        keyframes(pKF.first.first, 16) = pKF.second(3, 3);
+        // cout<< pKF.second << endl;
+        keyframes(pKF.first.first, 2) = pKF.second(0, 0);
+        keyframes(pKF.first.first, 3) = pKF.second(0, 1);
+        keyframes(pKF.first.first, 4) = pKF.second(0, 2);
+        keyframes(pKF.first.first, 5) = pKF.second(0, 3);
+        keyframes(pKF.first.first, 6) = pKF.second(1, 0);
+        keyframes(pKF.first.first, 7) = pKF.second(1, 1);
+        keyframes(pKF.first.first, 8) = pKF.second(1, 2);
+        keyframes(pKF.first.first, 9) = pKF.second(1, 3);
+        keyframes(pKF.first.first, 10) = pKF.second(2, 0);
+        keyframes(pKF.first.first, 11) = pKF.second(2, 1);
+        keyframes(pKF.first.first, 12) = pKF.second(2, 2);
+        keyframes(pKF.first.first, 13) = pKF.second(2, 3);
+        keyframes(pKF.first.first, 14) = pKF.second(3, 0);
+        keyframes(pKF.first.first, 15) = pKF.second(3, 1);
+        keyframes(pKF.first.first, 16) = pKF.second(3, 2);
+        keyframes(pKF.first.first, 17) = pKF.second(3, 3);
     }
     
     //Points
@@ -422,6 +331,10 @@ int localBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eige
         MapPoint pMP = lit;
         g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP.first.second+maxKFid+1));
         pMP.second = toEigenVector(vPoint->estimate()) ;
+
+        worldMapPoints(pMP.first.first, 1) = pMP.second(0, 0);
+        worldMapPoints(pMP.first.first, 2) = pMP.second(0, 1);
+        worldMapPoints(pMP.first.first, 3) = pMP.second(0, 2);
     }
     //cout << "done" << endl;
     return 1;

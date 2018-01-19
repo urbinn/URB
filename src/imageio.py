@@ -49,11 +49,12 @@ def draw_observations_depth(observations):
             cv2.putText(img, text, (int(p.cx), int(p.cy)), FONT, FONTSIZE, (255, 0, 0), 1, cv2.LINE_AA)
     return img
 
-def draw_frame_xyz(frame):
-    img = draw_frame(frame)
-    for p in frame.get_observations():
+def draw_observations_xyz(observations, img=None):
+    if img is None:
+        img = draw_observations(observations)
+    for p in observations:
         if p.get_depth() is not None:
-            x, y, z, _ = p.get_affine_coords()
+            x, y, z, _ = p.get_world_coords()
             text = '(%0.1f,%0.1f,%0.1f)'%(x, y, z)
             cv2.putText(img, text, (int(p.cx), int(p.cy)), FONT, FONTSIZE, (255, 0, 0), 1, cv2.LINE_AA)
     return img
@@ -63,19 +64,19 @@ def draw_frame_t(frame, t):
     img = draw_frame(frame)
     for p in frame.get_observations():
         if p.get_depth() is not None:
-            x, y, z, _ = tinv * p.get_affine_coords()
+            x, y, z, _ = tinv * p.get_world_coords()
             text = '(%0.1f,%0.1f,%0.1f)'%(x, y, z)
             cv2.putText(img, text, (int(p.cx), int(p.cy)), FONT, FONTSIZE, (255, 0, 0), 1, cv2.LINE_AA)
     return img
 
 def draw_frame_xyz(frame):
-    return draw_framepoints_xyz(frame.get_observations())
+    return draw_observations_xyz(frame.get_observations())
 
 def draw_observations_d3(observations):
     img = draw_observations(observations)
     for p in observations:
         if p.get_depth() is not None:
-            x, y, z, _ = p.get_affine_coords()
+            x, y, z, _ = p.get_world_coords()
             d = math.sqrt(x * x + y * y + z * z)
             text = '%0.1f'%(d)
             cv2.putText(img, text, (int(p.cx), int(p.cy)), FONT, FONTSIZE, (255, 0, 0), 1, cv2.LINE_AA)

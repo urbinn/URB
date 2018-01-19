@@ -15,28 +15,33 @@ def matching_framepoint(o, observations):
     best_distance = sys.maxsize
     next_best_distance = sys.maxsize
     best_observation = None
+    best_frame_point = None
     for kp in observations:
         if type(kp) is type(o):
             distance = kp.get_patch_distance(o)
-            if distance < best_distance:
-                next_best_distance = best_distance
-                best_distance = distance
-                best_frame_point = kp
-            elif distance < next_best_distance:
-                next_best_distance = distance
+            if distance < o.distance * o.confidence:
+                if distance < best_distance:
+                    next_best_distance = best_distance
+                    best_distance = distance
+                    best_frame_point = kp
+                elif distance < next_best_distance:
+                    next_best_distance = distance
+    if best_frame_point is not None:
+        if kp.get_patch_distance(best_frame_point, xoff=-1) <= best_distance:
+            return (1.0, None)
+        elif kp.get_patch_distance(best_frame_point, xoff=1) <= best_distance:
+            return (1.0, None)
     confidence = next_best_distance / (best_distance + 0.01)
     return (confidence, best_frame_point)
 
 # returns the matching keyPoints in a new frame to keyPoints in a keyFrame that exceed a confidence score
-def match_frame(frame, observations, sequence_confidence = SEQUENCE_CONFIDENCE):
+def match_frame(frame, keyframeobservations, sequence_confidence = SEQUENCE_CONFIDENCE):
     matches = []
-    for i, obs in enumerate(observations):
+    for i, obs in enumerate(keyframeobservations):
         confidence, fp = matching_framepoint(obs, frame.get_observations())
         if confidence > sequence_confidence:
-            matches.append(fp)
+            matches.append((fp, obs))
             fp.set_mappoint(obs.get_mappoint())
-        else:
-            fp.set_mappoint(None)
     return matches
             
 def create_sequence(frames, sequence_confidence=SEQUENCE_CONFIDENCE):
@@ -54,17 +59,32 @@ class Sequence:
         self.keyframes = []
         self.rotation = 0
         self.speed = 0
-        
-    def add_frame(self, frame, sequence_confidence = SEQUENCE_CONFIDENCE, clean=False):
+       
+    def add_keyframe(self, frame, sequence_confidence = SEQUENCE_CONFIDENCE, run_ba=True):
         if len(self.keyframes) == 0:
-            self.add_keyframe(frame)
             frame.set_pose( np.eye(4, dtype=np.float64) )
+            self._add_keyframe(frame, run_ba=run_ba)
         else:
+            keyframe = self.keyframes[-1]
+            matches = match_frame(frame, keyframe.get_observations(), sequence_confidence = sequence_confidence)
+            pose, points_left = get_pose(matches)
+            #print(points_left, len(matches), pose)
+            frame.set_pose(pose)
+            self._add_keyframe( frame, run_ba=run_ba )                     
+
+    def add_frame(self, frame, sequence_confidence = SEQUENCE_CONFIDENCE, clean=False, run_ba=True):
+        #print('add_frame')
+        if len(self.keyframes) == 0:
+            frame.set_pose( np.eye(4, dtype=np.float64) )
+            self._add_keyframe(frame, run_ba=run_ba)
+        else:
+            #print('add_frame1')
             keyframe = self.keyframes[-1]
             last_z = keyframe.frames[-1].get_pose()[2, 3] if len(keyframe.frames) > 0 else 0
             last_rotation = keyframe.frames[-1].get_pose()[0, 2] if len(keyframe.frames) > 0 else 0
             matches = match_frame(frame, keyframe.get_observations(), sequence_confidence = sequence_confidence)
-            
+            #print('add_frame2')
+
             points_left = len(matches)
             if points_left >=10:
                 pose, points_left = get_pose(matches)
@@ -88,7 +108,7 @@ class Sequence:
                         f.clean()
                     keyframe.clean()
                 keyframe = keyframe.frames.pop()
-                self.add_keyframe( keyframe )
+                self._add_keyframe( keyframe, run_ba=run_ba )
                 last_z = keyframe.frames[-1].get_pose()[2, 3] if len(keyframe.frames) > 0 else 0
                 last_rotation = keyframe.frames[-1].get_pose()[0, 2] if len(keyframe.frames) > 0 else 0
 
@@ -102,7 +122,7 @@ class Sequence:
                 
                 if points_left < 10 or invalid_rotation or invalid_speed:
                     print('WARNING: invalid pose estimation')
-                    print(keyframe.frameid, frame.frameid, len(matches), speed, rotation, pose)
+                    #print(keyframe.frameid, frame.frameid, len(matches), speed, rotation, pose)
                     frame.set_pose(np.eye(4, dtype=np.float64))
                 else:
                     frame.set_pose(pose) 
@@ -110,7 +130,28 @@ class Sequence:
             frame.keyframe = keyframe
             keyframe.frames.append(frame)
                 
-    def add_keyframe(self, frame):
+    def _run_local_ba(self, frame):
+        cv_keyframes = get_covisible_keyframes(frame)
+        mappoints = get_mappoints(cv_keyframes)
+        f_keyframes = [] #get_fixed_keyframes(mappoints, cv_keyframes)[:0]
+
+        cv_keyframes_np = keyframes_to_np(cv_keyframes)
+        f_keyframes_np = keyframes_to_np(f_keyframes)
+        mappoints_np = mappoints_to_np(mappoints)
+        links_np = links_to_np(mappoints)
+
+        f_keyframes = np.asfortranarray(f_keyframes_np)
+        cv_keyframes_BA = np.asfortranarray(cv_keyframes_np)
+        mappoints = np.asfortranarray(mappoints_np)
+        links = np.array(links_np, order='f')
+
+        results =  urbg2o.localBundleAdjustment(cv_keyframes_BA, f_keyframes, mappoints, links)
+
+        for i in range(2, len(cv_keyframes_BA)):
+            cv_keyframes[i].set_world_pose( cv_keyframes_BA[i, 2:].reshape((4,4)) )
+             
+    def _add_keyframe(self, frame, run_ba=True):
+        frame.set_previous_keyframe(None if len(self.keyframes) == 0 else self.keyframes[-1])
         frame.compute_depth()
         frame.filter_not_useful()
         frame.filter_most_confident()
@@ -121,14 +162,16 @@ class Sequence:
             else:
                 obs.register_mappoint()
                 if obs.get_depth() is None:
-                    acoords = frame.get_pose() * obs.get_mappoint().get_affine_coords()
-                    obs.z = affine_coords_to_cam(acoords)
+                    pass
                 else:
-                    obs.get_mappoint().update_affine_coords(obs)
+                    obs.get_mappoint().update_world_coords(obs)
         frame.keyframeid = self.framecount
         self.framecount += 1
         self.keyframes.append(frame)
         frame.frames = []
+        if len(self.keyframes) > 2 and run_ba:
+            pass
+            #self._run_local_ba(frame)
             
     def dump(self, folder):
         if os.path.exists(folder):
@@ -155,27 +198,29 @@ def load_keyframes(file):
 # return a set of frames that share mappoints with the given keyframe
 def get_covisible_keyframes(keyframe):
     mappoints = [ o.get_mappoint() for o in keyframe.get_observations() ]
-    return { o.get_frame() for m in mappoints for o in m.get_observations() }
+    frames = { o.get_frame() for m in mappoints for o in m.get_observations() }
+    return sorted(frames, key=lambda o: o.keyframeid)
 
 # return a set of all mappoint that are visible in the given set of keyframes
 def get_mappoints(keyframes):
-    return { o.get_mappoint() for kf in keyframes for o in kf.get_observations() if o.get_mappoint() is not None }
+    return { o.get_mappoint() for kf in keyframes for o in kf.get_observations() 
+            if o.get_mappoint() is not None and len(o.get_mappoint().observations) > 1}
 
 # return a set of keyframes that share mappoints with one or more of the covisible_keyframes
 # that are not in the set of covisible keyframes
 def get_fixed_keyframes(mappoints, covisible_keyframes):
     frames = { o.get_frame() for m in mappoints for o in m.get_observations() }
-    return frames - covisible_keyframes
+    return sorted(frames - set(covisible_keyframes), key=lambda o: o.keyframeid)
 
 # save the keyframe poses to file
 # (keyframe_id, frame_id, 4x4 pose)
 def keyframes_to_np(keyframes):
-    return np.hstack([ [ [ kf.keyframeid] for kf in keyframes ], [ [kf.frameid] for kf in keyframes ], [ kf.get_pose().flatten() for kf in keyframes ] ])
+    return np.hstack([ [ [ kf.keyframeid] for kf in keyframes ], [ [kf.frameid] for kf in keyframes ], [ kf.get_world_pose().flatten() for kf in keyframes ] ])
 
 # save the world coordinates of mappoints to file
 # (mappoint_id, x, y, z, 1)
 def mappoints_to_np(mappoints):
-    kfp = np.hstack([ [ [m.id] for m in mappoints ], [ m.get_affine_coords() for m in mappoints ] ])
+    kfp = np.hstack([ [ [m.id] for m in mappoints ], [ m.get_world_coords() for m in mappoints ] ])
     return kfp
 
 # save the edges between keyframes and mappoints

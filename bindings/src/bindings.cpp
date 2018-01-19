@@ -6,6 +6,8 @@
 
 #include "pose_estimation.h"
 #include "local_ba.h"
+#include "full_ba.h"
+#include "outliers_detection.h"
 
 namespace py = pybind11;
 
@@ -17,6 +19,12 @@ PYBIND11_PLUGIN(urbg2o) {
     
     m.def("localBundleAdjustment", &localBundleAdjustment, "local bundle adjustment",
     py::arg("keyframes"), py::arg("fixedKeyframes"), py::arg("worldMapPoints"), py::arg("pointsRelation"));
+
+    m.def("outliersForLocalBundleAdjustment", &outliersForLocalBundleAdjustment, "outliers detection adjustment",
+    py::arg("keyframes"), py::arg("fixedKeyframes"), py::arg("worldMapPoints"), py::arg("pointsRelation"));
+
+    m.def("fullBundleAdjustment", &fullBundleAdjustment, "full bundle adjustment",
+    py::arg("keyframes"), py::arg("mapPoints"), py::arg("pointsRelation"));
 
     return m.ptr();
 }

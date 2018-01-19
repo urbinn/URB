@@ -54,12 +54,15 @@ class Observation:
             self.latestpatch = self.patch
             return self.patch
         
-    def get_patch_distance(self, keypoint):
-        return cv2.norm(self.get_patch(), keypoint.get_patch(), NORM)
+    def get_patch_distance(self, keypoint, xoff=0):
+        if xoff == 0:
+            return cv2.norm(self.get_patch(), keypoint.get_patch(), NORM)
+        else:
+            return cv2.norm(get_patch(self.get_frame().get_smoothed(), self.leftx+xoff, self.topy), keypoint.get_patch(), NORM)
     
     def get_disparity(self, frameRight):
         if self.disparity is None:
-            self.confidence, self.disparity = patch_disparity(self, frameRight)
+            self.confidence, self.distance, self.disparity = patch_disparity(self, frameRight)
         return self.disparity
                                                     
     def get_depth(self):
@@ -67,12 +70,20 @@ class Observation:
             self.z = estimated_distance(self.disparity)
         return self.z
     
+    def get_world_coords(self):
+        try:
+            return self.world_coords
+        except:
+            coords = self.get_affine_coords()
+            self.world_coords = np.dot(np.linalg.pinv(self.frame.get_world_pose()), coords)
+            return self.world_coords
+    
     def get_affine_coords(self):
         try:
-            return self.affine_coords
+            return self._affine_coords
         except:
-            self.affine_coords = cam_to_affine_coords(self.cx, self.cy, self.get_depth())
-            return self.affine_coords
+            self._affine_coords = cam_to_affine_coords(self.cx, self.cy, self.get_depth())
+            return self._affine_coords
     
     def get_keypoint(self):
         return self.keypoint
