@@ -136,16 +136,19 @@ class Frame:
     
     def filter_not_useful(self, stereo_confidence=STEREO_CONFIDENCE):
         self.filter_observations(lambda x: x.has_mappoint() or (x.disparity is not None and x.confidence > stereo_confidence))
+        
+    def filter_has_depth(self, stereo_confidence=STEREO_CONFIDENCE):
+        self.filter_observations(lambda x: x.disparity is not None and x.confidence > stereo_confidence)
 
-    def filter_most_confident(self):
-        self.filter_observations(lambda x: x.disparity is not None)
-        self._observations.sort(key = lambda x: -x.confidence)
-        seen = set()
-        keep = []
-        for o in self._observations:
-            if (o.cx, o.cy) not in seen:
-                keep.append(o)
-        self._observations = keep
+    #def filter_most_confident(self):
+    #    self.filter_observations(lambda x: x.disparity is not None)
+    #    self._observations.sort(key = lambda x: -x.confidence)
+    #    seen = set()
+    #    keep = []
+    #    for o in self._observations:
+    #        if (o.cx, o.cy) not in seen:
+    #            keep.append(o)
+    #    self._observations = keep
         
     def filter_non_mappoint(self):
         self.filter_observations(lambda x: x.has_mappoint())
@@ -162,26 +165,36 @@ class Frame:
 
             veTop = top_vertical_edge(higher_vertical_edges)
             veBottom = bottom_vertical_edge(lower_vertical_edges)
-            veBottom[-1:,:] = zeroimage[-1:,:]
-            veBottom[:PATCH_SIZE,:] = zeroimage[0:PATCH_SIZE,:]
-            veBottom[:,:PATCH_SIZE+2] = zeroimage[:,:PATCH_SIZE+2]
-            veBottom[:,-PATCH_SIZE:] = zeroimage[:,-PATCH_SIZE:]
-            veTop[-PATCH_SIZE:,:] = zeroimage[-PATCH_SIZE:,:]
-            veTop[:1,:] = zeroimage[:1,:]
-            veTop[:,:PATCH_SIZE+2] = zeroimage[:,:PATCH_SIZE+2]
-            veTop[:,-PATCH_SIZE:] = zeroimage[:,-PATCH_SIZE:]
-            
+            #veBottom[-1:,:] = zeroimage[-1:,:]
+            #veBottom[:PATCH_SIZE,:] = zeroimage[0:PATCH_SIZE,:]
+            #veBottom[:,:PATCH_SIZE+2] = zeroimage[:,:PATCH_SIZE+2]
+            #veBottom[:,-PATCH_SIZE:] = zeroimage[:,-PATCH_SIZE:]
+            #veTop[-PATCH_SIZE:,:] = zeroimage[-PATCH_SIZE:,:]
+            #veTop[:1,:] = zeroimage[:1,:]
+            #veTop[:,:PATCH_SIZE+2] = zeroimage[:,:PATCH_SIZE+2]
+            #veTop[:,-PATCH_SIZE:] = zeroimage[:,-PATCH_SIZE:]
+            veBottom[-HALF_PATCH_SIZE:,:] = zeroimage[-HALF_PATCH_SIZE:,:]
+            veBottom[:HALF_PATCH_SIZE,:] = zeroimage[:HALF_PATCH_SIZE,:]
+            veBottom[:,:HALF_PATCH_SIZE+2] = zeroimage[:,:HALF_PATCH_SIZE+2]
+            veBottom[:,-HALF_PATCH_SIZE:] = zeroimage[:,-HALF_PATCH_SIZE:]
+            veTop[-HALF_PATCH_SIZE:,:] = zeroimage[-HALF_PATCH_SIZE:,:]
+            veTop[:HALF_PATCH_SIZE,:] = zeroimage[:HALF_PATCH_SIZE,:]
+            veTop[:,:HALF_PATCH_SIZE+2] = zeroimage[:,:HALF_PATCH_SIZE+2]
+            veTop[:,-HALF_PATCH_SIZE:] = zeroimage[:,-HALF_PATCH_SIZE:]
+
             # combine pixels found at the top and bottom of edges
             # results in an image where keypoints are set as pixels with a 255 intensity
             #keypointImage = veTop + veBottom
 
             #convert from pixels in an image to KeyPoints
             keypoints = np.column_stack(np.where(veTop >= 255))
-            bottomleftpoints = [ObservationTopLeft(self, x, y) for y,x in keypoints]
-            bottomrightpoints = [ObservationTopRight(self, x, y) for y,x in keypoints]
+            #bottomleftpoints = [ObservationTopLeft(self, x, y) for y,x in keypoints]
+            #bottomrightpoints = [ObservationTopRight(self, x, y) for y,x in keypoints]
+            self._observations = [Observation(self, x, y) for y,x in keypoints]
             keypoints = np.column_stack(np.where(veBottom >= 255))
-            topleftpoints = [ObservationBottomLeft(self, x, y) for y,x in keypoints]
-            toprightpoints = [ObservationBottomRight(self, x, y) for y,x in keypoints]
-            self._observations = topleftpoints + toprightpoints + bottomleftpoints + bottomrightpoints
-            self._observations = [ o for o in self._observations if o.get_patch().flatten().std() > 40 ]
+            #topleftpoints = [ObservationBottomLeft(self, x, y) for y,x in keypoints]
+            #toprightpoints = [ObservationBottomRight(self, x, y) for y,x in keypoints]
+            #self._observations = topleftpoints + toprightpoints + bottomleftpoints + bottomrightpoints
+            self._observations = self._observations + [Observation(self, x, y) for y,x in keypoints]
+            self._observations = [ o for o in self._observations if o.get_patch().flatten().std() > 20 ]
             return self._observations

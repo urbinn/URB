@@ -7,6 +7,7 @@ class MapPoint:
         self.id = None
         self.world_coords = obs.get_world_coords()
         self.observations = { obs }
+        self.last_observation = obs
         
     def get_world_coords(self):
         return self.world_coords
@@ -14,9 +15,13 @@ class MapPoint:
     def update_world_coords(self, obs):
         if obs.get_depth() is not None:
             self.world_coords = obs.get_world_coords()
+            self.last_observation = obs
     
     def update_world_coords_ba(self, coords):
         self.world_coords = coords
+        
+    def get_last_observation(self):
+        return self.last_observation
     
     def add_observation(self, observation):
         self.observations.add(observation)
