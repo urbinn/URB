@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 from src.imageio import zero_image_from_dimension
 
 class Trajectory:
@@ -24,8 +25,8 @@ class Trajectory:
         maxxy = max(maxx - minx, maxy - miny) * 1.01
 
         for p in poses:
-            x = self.dimensions[0] * (p[0] - minx) / (maxxy)
-            z = self.dimensions[0] - self.dimensions[1] * (p[2] - miny) / (maxxy)
+            x = int(self.dimensions[0]) * (p[0] - minx) / (maxxy)
+            z = int(self.dimensions[0]) - int(self.dimensions[1]) * (p[2] - miny) / (maxxy)
             coords.append([x, z])
 
         return coords
@@ -36,7 +37,7 @@ class Trajectory:
 
         for i in range(1, len(self._coords)):
             cv2.line(img, (int(self._coords[i - 1][0]), int(self._coords[i - 1][1])), 
-                (int(self._coords[i][0]), int(self._coords[i][1])), color, 2)
+                (int(self._coords[i][0]), int(self._coords[i][1])), (0,0,0), 2)
                 
         return img
 

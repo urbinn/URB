@@ -20,7 +20,7 @@ def show2(left, right):
     fig.add_subplot(1,2,2)
     plt.imshow(right)
     plt.show()
-    
+
 def show(img):
     """shows a left and right stereo image side by side"""
     plt.figure(figsize=(20,6))
