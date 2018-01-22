@@ -48,19 +48,22 @@ def match_frame(frame, keyframeobservations, sequence_confidence = SEQUENCE_CONF
 
 def pose_frame(frame, keyframe, sequence_confidence = SEQUENCE_CONFIDENCE):
     keyframeobservations = keyframe.get_static_observations()
-    if keyframe._previous_keyframe is not None:
-        pk = keyframe._previous_keyframe
-        keyframeobservations = list(keyframeobservations)
-        keyframeobservations.extend([o for o in pk.get_static_observations() if o.mappoint.last_observation == o])
     matches = match_frame(frame, keyframeobservations, sequence_confidence = sequence_confidence)
     pose, points_left = get_pose(matches)
     frame.set_pose(pose)
-    for obs, _ in matches:
-        if obs.has_mappoint():
-            obs.check_mappoint()
-    matches = [m for m in matches if m[0].is_static()]
-    pose, points_left = get_pose(matches)
-    frame.set_pose(pose)
+    previous_frame = keyframe.frames[-1] if len(keyframe.frames) > 0 else keyframe
+    threshold = 0.2
+    if abs(pose[0,3]) > threshold:
+        xmove = abs(pose[0,3]) + 1
+        while abs(pose[0,3]) < xmove and abs(pose[0,3]) > threshold:
+            #print('loop ', abs(pose[0,3]))
+            xmove = abs(pose[0,3])
+            for obs, _ in matches:
+                if obs.has_mappoint():
+                     obs.check_inv_mappoint()
+            matches = [m for m in matches if m[0].is_static()]
+            pose, points_left = get_pose(matches)
+            frame.set_pose(pose)
 
     count = 0
     for obs, _ in matches:

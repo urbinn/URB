@@ -62,6 +62,12 @@ class Frame:
             del self._smoothed
         except:
             pass
+        try:
+            del self._observations
+        except:
+            pass
+
+
     
     def get_width(self):
         return self.get_image().shape[1]
@@ -99,6 +105,9 @@ class Frame:
     def set_previous_keyframe(self, keyframe):
         self._previous_keyframe = keyframe
         #print('set_previous_keyframe', self.frameid)
+    
+    def get_previous_keyframe(self):
+        return self._previous_keyframe
     
     def get_world_pose(self):
         if self._world_pose is None:
@@ -161,7 +170,8 @@ class Frame:
         self.filter_observations(lambda x: x.has_mappoint())
         
     def get_static_observations(self):
-        return [ o for o in self.get_observations() if o.is_static() ]
+        return self.get_observations()
+        #return [ o for o in self.get_observations() if o.is_static() ]
         
     def get_observations(self):
         try:

@@ -35,6 +35,14 @@ class Observation:
         if abs(cam_coords[0] - self.cx) > 2 or abs(cam_coords[1] - self.cy) > 2:
             self.mappoint.static = False
             
+    def check_inv_mappoint(self):
+        last_observation = self.mappoint.get_last_observation()
+        affine_coords = np.dot( self.frame.get_pose(), last_observation.get_affine_coords() )  
+        cam_coords = affine_coords_to_cam( affine_coords )
+        #print(self.cx, self.cy, cam_coords[0], cam_coords[1], )
+        if abs(cam_coords[0] - self.cx) <= 3 and abs(cam_coords[1] - self.cy) <= 3:
+            self.mappoint.static = False
+
     def check_mappoint_old(self):
         last_observation = self.mappoint.get_last_observation()
         affine_coords = np.dot( self.frame.get_world_pose(), last_observation.get_world_coords() )
