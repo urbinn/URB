@@ -8,6 +8,7 @@ class MapPoint:
         self.world_coords = obs.get_world_coords()
         self.observations = { obs }
         self.last_observation = obs
+        self.static = True
         
     def get_world_coords(self):
         return self.world_coords

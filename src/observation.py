@@ -22,13 +22,24 @@ class Observation:
     def set_mappoint_no_check(self, mappoint):
         self.mappoint = mappoint
 
+    def is_static(self):
+        return self.has_mappoint() and self.mappoint.static
+        
     # checks if the mappoint projects back to close to similar x,y coordinates on the screen
     # if not, the observation is no longer assigned to the mappoint
     def check_mappoint(self):
         last_observation = self.mappoint.get_last_observation()
+        affine_coords = np.dot( self.frame.get_pose(), last_observation.get_affine_coords() )  
+        cam_coords = affine_coords_to_cam( affine_coords )
+        #print(self.cx, self.cy, cam_coords[0], cam_coords[1])
+        if abs(cam_coords[0] - self.cx) > 2 or abs(cam_coords[1] - self.cy) > 2:
+            self.mappoint.static = False
+            
+    def check_mappoint_old(self):
+        last_observation = self.mappoint.get_last_observation()
         affine_coords = np.dot( self.frame.get_world_pose(), last_observation.get_world_coords() )
         cam_coords = affine_coords_to_cam( affine_coords )
-        print(self.cx, self.cy, cam_coords[0], cam_coords[1])
+        #print(self.cx, self.cy, cam_coords[0], cam_coords[1])
         if abs(cam_coords[0] - self.cx) > 2 or abs(cam_coords[1] - self.cy) > 2:
             self.mappoint = None
             
@@ -98,7 +109,7 @@ class Observation:
             return self.world_coords
         except:
             coords = self.get_affine_coords()
-            self.world_coords = np.dot(np.linalg.pinv(self.frame.get_world_pose()), coords)
+            self.world_coords = np.dot( self.frame.get_inv_world_pose(), coords)
             return self.world_coords
     
     def get_affine_coords(self):

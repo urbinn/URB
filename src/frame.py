@@ -110,6 +110,13 @@ class Frame:
                 #print('get_world_pose ', self.frameid, self._world_pose )
         return self._world_pose
     
+    def get_inv_world_pose(self):
+        try:
+            return self._inv_world_pose
+        except:
+            self._inv_world_pose = np.linalg.pinv(self.get_world_pose())
+            return self._inv_world_pose
+    
     def set_world_pose(self, pose):
         self._world_pose = pose
         self._pose = np.dot( np.linalg.pinv( self._previous_keyframe.get_world_pose() ), pose )
@@ -152,6 +159,9 @@ class Frame:
         
     def filter_non_mappoint(self):
         self.filter_observations(lambda x: x.has_mappoint())
+        
+    def get_static_observations(self):
+        return [ o for o in self.get_observations() if o.is_static() ]
         
     def get_observations(self):
         try:

@@ -25,7 +25,7 @@ for frameid in range(FRAMECOUNT):
         print('frameid ', frameid)
     filename = '%06d.png'%(frameid)
     left_frame = Frame(LEFTDIR + '/' + filename, RIGHTDIR)
-    seq.add_frame(left_frame)
+    seq.add_keyframe(left_frame)
     
 keyframes_np = keyframes_to_np(seq.keyframes)
 keyframes_pose_np = keyframes_pose_to_np(seq.keyframes)
