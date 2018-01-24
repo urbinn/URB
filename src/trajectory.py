@@ -3,25 +3,28 @@ import cv2
 import random
 from src.imageio import zero_image_from_dimension
 
-COLORS = {
-
-}
-
 class Trajectory:
-    def __init__(self, poses, dimensions = None, observations = None):
+    def __init__(self, poses, dimensions = None, observations_per_frame = None):
         self.dimensions = dimensions
         self._poses = self.transform_poses(poses)
-        self._observations = observations
-        self._observations_rwc = [obs.get_world_coords() for obs in self._observations]
-        self._scaling = self.get_scaling([(x, z) for x, _, z, _ in self._poses])
+        self._observations_per_frame = observations_per_frame
+        self._observations_rwc = []
+
+        for i, observations in enumerate(self._observations_per_frame):
+            pose = self._poses[i]            
+            for obs in observations:
+                self._observations_rwc.append((np.dot(obs.get_affine_coords(), pose), obs.classification))
+
+        self._points = [np.dot(np.array([0,0,0,1.0]), pose) for pose in self._poses]
+        self._scaling = self.get_scaling([(x, z) for x, _, z, _ in self._points])
 
     def transform_poses(self, poses):
-        points = np.repeat(np.array([[0,0,0,1.0]]), len(poses), axis=0) 
+        worldposes = np.array([np.eye(4)] * len(poses))
 
-        for i in range(1, len(poses)):
-            points[i:] = np.dot(points[i:], np.linalg.pinv(poses[i].T))
+        for i in range(len(poses)-1, 0, -1):
+                worldposes[i:] = np.dot(worldposes[i:], np.linalg.pinv(poses[i].T))
 
-        return points
+        return worldposes
 
     """Converts 3n vector to fit in given dimensions"""
     def get_scaling(self, coords):
@@ -42,18 +45,18 @@ class Trajectory:
         x, y = self.dimensions
         img = zero_image_from_dimension(x, y)
 
-        for i in range(1, len(self._poses)):
-            coords = self.scale_coords(self._poses[i-1][0], self._poses[i-1][2], self._scaling)
-            coords2 = self.scale_coords(self._poses[i][0], self._poses[i][2], self._scaling)
+        for i in range(1, len(self._points)):
+            coords = self.scale_coords(self._points[i-1][0], self._points[i-1][2], self._scaling)
+            coords2 = self.scale_coords(self._points[i][0], self._points[i][2], self._scaling)
 
             cv2.line(img, (int(coords[0]), int(coords[1])), 
                 (int(coords2[0]), int(coords2[1])), (0,0,0), 2)
 
         """TODO: Extract method"""
-        if with_observations and self._observations:
-            for i, obs in enumerate(self._observations):
-                x, _, z, _ = self._observations_rwc[i]
-                clas = self._observations[i].classification
+        if with_observations and self._observations_per_frame:
+            for i, obs in enumerate(self._observations_rwc):
+                coord, clas = obs
+                x, _, z, _ = coord
                 scaled_x, scaled_y = self.scale_coords(x, z, self._scaling)
 
                 cv2.circle(img, (int(scaled_x), int(scaled_y)), 3, (255, 0, 0), -1)
