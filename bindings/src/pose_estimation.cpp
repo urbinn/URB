@@ -136,7 +136,7 @@ int poseOptimization(Eigen::Ref<Eigen::MatrixXd> coords, Eigen::Ref<Eigen::Matri
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
-    const float chi2Mono[4] = {5.991, 5.991, 5.991, 5.991};
+    const float chi2Mono[4] = {4 * 5.991, 4 * 5.991, 4 * 5.991, 4 * 5.991};
     const float chi2Stereo[4] = {7.815, 7.815, 7.815, 7.815};
     const int its[4] = {10, 10, 10, 10};
 

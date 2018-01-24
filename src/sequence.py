@@ -38,39 +38,56 @@ def matching_observation(o, observations):
 
 # returns the matching keyPoints in a new frame to keyPoints in a keyFrame that exceed a confidence score
 def match_frame(frame, keyframeobservations, sequence_confidence = SEQUENCE_CONFIDENCE):
-    matches = []
+    newframematches = dict()
     for i, keyframeobs in enumerate(keyframeobservations):
         confidence, newframeobs = matching_observation(keyframeobs, frame.get_observations())
         if confidence > sequence_confidence:
-            matches.append((newframeobs, keyframeobs))
-            newframeobs.set_mappoint_no_check(keyframeobs.get_mappoint())
-    return matches
+            try:
+                if newframematches[newframeobs][0] < confidence:
+                    newframematches[newframeobs] = (confidence, keyframeobs)
+                    newframeobs.set_mappoint_no_check(keyframeobs.get_mappoint())
+            except:
+                newframematches[newframeobs] = (confidence, keyframeobs)
+                newframeobs.set_mappoint_no_check(keyframeobs.get_mappoint())
 
+    return [ (n, k[1]) for n,k in newframematches.items() ]
+
+def responsible_observations(matches):
+    responsible = []
+    non_responsible = []
+    for m in matches:
+        if m[0].check_mappoint():
+            responsible.append(m)
+        else:
+            non_responsible.append(m)
+    return responsible, non_responsible
+
+def diff2(pose1, pose2):
+    p = pose1 - pose2
+    return sum(sum(p * p))
+            
 def pose_frame(frame, keyframe, sequence_confidence = SEQUENCE_CONFIDENCE):
     keyframeobservations = keyframe.get_static_observations()
     matches = match_frame(frame, keyframeobservations, sequence_confidence = sequence_confidence)
-    pose, points_left = get_pose(matches)
-    frame.set_pose(pose)
     previous_frame = keyframe.frames[-1] if len(keyframe.frames) > 0 else keyframe
-    threshold = 0.2
-    if abs(pose[0,3]) > threshold:
-        xmove = abs(pose[0,3]) + 1
-        while abs(pose[0,3]) < xmove and abs(pose[0,3]) > threshold:
-            #print('loop ', abs(pose[0,3]))
-            xmove = abs(pose[0,3])
-            for obs, _ in matches:
-                if obs.has_mappoint():
-                     obs.check_inv_mappoint()
-            matches = [m for m in matches if m[0].is_static()]
-            pose, points_left = get_pose(matches)
-            frame.set_pose(pose)
-
-    count = 0
-    for obs, _ in matches:
-        if obs.has_mappoint():
-            obs.check_mappoint()
-        if obs.is_static():
-            count += 1
+    diff = sys.maxsize
+    while True:
+        pose, points_left = get_pose(matches)
+        frame.set_pose(pose)
+        diffn = diff2(pose, previous_frame.get_pose())
+        if diffn < diff:
+            diff = diffn
+            bestpose = pose
+            bestmatches, matches = responsible_observations(matches)
+            if previous_frame == keyframe and keyframe.get_previous_keyframe() is None:
+                break
+        else:
+            break
+    
+    frame.set_pose(bestpose)
+    count = len(bestmatches)
+    for obs, kfobs in bestmatches:
+        obs.register_mappoint()
             
     last_z = keyframe.frames[-1].get_pose()[2, 3] if len(keyframe.frames) > 0 else keyframe.get_pose()[2,3]
     last_rotation = keyframe.frames[-1].get_pose()[0, 2] if len(keyframe.frames) > 0 else keyframe.get_pose()[0,2]
@@ -79,10 +96,11 @@ def pose_frame(frame, keyframe, sequence_confidence = SEQUENCE_CONFIDENCE):
     invalid_rotation = rotation > 0.2
     speed = (pose[2,3] - last_z)
     invalid_speed = speed < -4 or speed > 0
-    if invalid_rotation:
-        print('invalid rotation', rotation, '\n', pose)
-    if invalid_speed:
-        print('invalid speed keyframe {} frame {} speed {}\n'.format(keyframe.frameid, frame.frameid, speed), pose)
+    #if invalid_rotation:
+    #    print('invalid rotation', rotation, '\n', pose)
+    #if invalid_speed:
+    #    print('invalid speed keyframe {} frame {} speed {}\n'.format(keyframe.frameid, frame.frameid, speed), pose)
+    print(frame.frameid, '\n', bestpose)
     return invalid_speed, invalid_rotation, count
     
 def create_sequence(frames, sequence_confidence=SEQUENCE_CONFIDENCE):

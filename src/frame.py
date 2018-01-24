@@ -24,7 +24,7 @@ def get_pose(matches):
     return pose, pointsLeft
 
 class Frame:
-    def __init__(self, filepath, rightpath = None):
+    def __init__(self, filepath, rightpath = None, leftright=0):
         global _frameid
         self.keyframeid = None
         self._filepath = filepath
@@ -34,6 +34,7 @@ class Frame:
         self._world_pose = None
         self.frameid = _frameid
         self._previous_keyframe = None
+        self._leftright = leftright
         _frameid += 1
         
     def get_right_frame(self):
@@ -42,7 +43,7 @@ class Frame:
         except:
             if self._rightpath is None:
                 raise ValueError('rightpath is not set')
-            self._rightframe = Frame('/'.join([self._rightpath, self._filepath.split('/')[-1]]))
+            self._rightframe = Frame('/'.join([self._rightpath, self._filepath.split('/')[-1]]), leftright=1)
             return self._rightframe
      
     def get_image(self):
@@ -193,14 +194,20 @@ class Frame:
             #veTop[:1,:] = zeroimage[:1,:]
             #veTop[:,:PATCH_SIZE+2] = zeroimage[:,:PATCH_SIZE+2]
             #veTop[:,-PATCH_SIZE:] = zeroimage[:,-PATCH_SIZE:]
-            veBottom[-HALF_PATCH_SIZE:,:] = zeroimage[-HALF_PATCH_SIZE:,:]
-            veBottom[:HALF_PATCH_SIZE,:] = zeroimage[:HALF_PATCH_SIZE,:]
             veBottom[:,:HALF_PATCH_SIZE+2] = zeroimage[:,:HALF_PATCH_SIZE+2]
             veBottom[:,-HALF_PATCH_SIZE:] = zeroimage[:,-HALF_PATCH_SIZE:]
-            veTop[-HALF_PATCH_SIZE:,:] = zeroimage[-HALF_PATCH_SIZE:,:]
-            veTop[:HALF_PATCH_SIZE,:] = zeroimage[:HALF_PATCH_SIZE,:]
             veTop[:,:HALF_PATCH_SIZE+2] = zeroimage[:,:HALF_PATCH_SIZE+2]
             veTop[:,-HALF_PATCH_SIZE:] = zeroimage[:,-HALF_PATCH_SIZE:]
+            if self._leftright:
+                veBottom[-PATCH_SIZE:,:] = zeroimage[-PATCH_SIZE:,:]
+                veTop[-PATCH_SIZE:,:] = zeroimage[-PATCH_SIZE:,:]
+                veBottom[:HALF_PATCH_SIZE,:] = zeroimage[:HALF_PATCH_SIZE,:]
+                veTop[:HALF_PATCH_SIZE,:] = zeroimage[:HALF_PATCH_SIZE,:]
+            else:
+                veBottom[:PATCH_SIZE,:] = zeroimage[:PATCH_SIZE,:]
+                veTop[:PATCH_SIZE,:] = zeroimage[:PATCH_SIZE,:]
+                veBottom[-HALF_PATCH_SIZE:,:] = zeroimage[-HALF_PATCH_SIZE:,:]
+                veTop[-HALF_PATCH_SIZE:,:] = zeroimage[-HALF_PATCH_SIZE:,:]
 
             # combine pixels found at the top and bottom of edges
             # results in an image where keypoints are set as pixels with a 255 intensity
@@ -208,13 +215,10 @@ class Frame:
 
             #convert from pixels in an image to KeyPoints
             keypoints = np.column_stack(np.where(veTop >= 255))
-            #bottomleftpoints = [ObservationTopLeft(self, x, y) for y,x in keypoints]
-            #bottomrightpoints = [ObservationTopRight(self, x, y) for y,x in keypoints]
-            self._observations = [Observation(self, x, y) for y,x in keypoints]
+            obs = { (x,y) for y,x in keypoints }
             keypoints = np.column_stack(np.where(veBottom >= 255))
-            #topleftpoints = [ObservationBottomLeft(self, x, y) for y,x in keypoints]
-            #toprightpoints = [ObservationBottomRight(self, x, y) for y,x in keypoints]
-            #self._observations = topleftpoints + toprightpoints + bottomleftpoints + bottomrightpoints
-            self._observations = self._observations + [Observation(self, x, y) for y,x in keypoints]
+            obs = obs | { (x,y) for y,x in keypoints }
+            
+            self._observations = [Observation(self, x, y) for x,y in obs ]
             self._observations = [ o for o in self._observations if o.get_patch().flatten().std() > 20 ]
             return self._observations

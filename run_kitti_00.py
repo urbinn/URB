@@ -6,6 +6,7 @@ os.environ['PATCH_SIZE'] = '17'
 
 import sys
 SEQUENCE = '00' if len(sys.argv) < 2 else sys.argv[1]
+OUTDIR = 'results' if len(sys.argv) < 3 else sys.argv[2]
 
 from src.kitti import *
 import numpy as np
@@ -13,7 +14,6 @@ import glob
 
 LEFTDIR = '/data/urbinn/datasets/kitti/sequences/%02d/image_2'%(int(SEQUENCE))
 RIGHTDIR = '/data/urbinn/datasets/kitti/sequences/%02d/image_3'%(int(SEQUENCE))
-OUTDIR = 'resultsba'
 
 FILES = len(list(glob.glob(LEFTDIR + '/*')))
 FRAMECOUNT = FILES
