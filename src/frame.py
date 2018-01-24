@@ -43,7 +43,6 @@ class Frame:
                 if clas.contains(obs):
                     obs.set_classification(clas.object_name)
                     
-
     def get_right_frame(self):
         try:
             return self._rightframe

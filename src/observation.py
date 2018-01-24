@@ -87,7 +87,7 @@ class Observation:
     
     def get_keypoint(self):
         return self.keypoint
-        
+
 # OpenCV reverses coordinates, so the observation on top of an edge has a smaller y coordinate than the bottom of the same vertical edge
 class ObservationTopRight(Observation):
     def __init__(self, frame, x, y):

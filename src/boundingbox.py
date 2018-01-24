@@ -1,4 +1,5 @@
 import json
+import cv2
 
 def format_yolo_output(yolo_json_file):
     """ 
