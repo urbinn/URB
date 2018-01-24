@@ -5,21 +5,24 @@ from src.imageio import *
 class MapPoint:
     def __init__(self, obs):
         self.id = None
-        self.z = obs.get_depth()
-        self._affine_coords = obs.get_affine_coords()
         self.world_coords = obs.get_world_coords()
         self.observations = { obs }
-    
-    def get_affine_coords(self):
-        return self._affine_coords
-    
+        self.last_observation = obs
+        self.static = True
+        
     def get_world_coords(self):
         return self.world_coords
     
     def update_world_coords(self, obs):
-        if obs.get_depth() is not None and obs.z < self.z:
-            self.z = obs.z
+        if obs.get_depth() is not None:
             self.world_coords = obs.get_world_coords()
+            self.last_observation = obs
+    
+    def update_world_coords_ba(self, coords):
+        self.world_coords = coords
+        
+    def get_last_observation(self):
+        return self.last_observation
     
     def add_observation(self, observation):
         self.observations.add(observation)

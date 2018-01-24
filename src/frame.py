@@ -8,22 +8,23 @@ import urbg2o
 
 _frameid = 0
 
-def observations_to_numpy(observations):
+def observations_to_numpy(matches):
     #fps = [(fp.get_mappoint().id, fp.get_mappoint().get_affine_coords(), fp.cx, fp.cy) for fp in observations if fp.has_mappoint()]
-    fps = [(fp.get_mappoint().get_affine_coords(), fp.cx, fp.cy) for fp in observations if fp.has_mappoint()]
+    fps = [( kfo.get_affine_coords(), o.cx, o.cy) for o, kfo in matches ]
+
     fps =[(1,m[0], m[1], m[2], x, y) for m, x, y in fps]
     arr = np.array(fps, dtype=np.float64, order='f')
     return arr
 
-def get_pose(observations):
+def get_pose(matches):
     pose = np.ndarray((4,4), dtype=np.float64, order='f')
-    fps = observations_to_numpy(observations)
+    fps = observations_to_numpy(matches)
     pointsLeft = urbg2o.poseOptimization(fps, pose)
     #print(pointsLeft, pose)
     return pose, pointsLeft
 
 class Frame:
-    def __init__(self, filepath, rightpath = None):
+    def __init__(self, filepath, rightpath = None, leftright=0):
         global _frameid
         self.keyframeid = None
         self._filepath = filepath
@@ -33,6 +34,7 @@ class Frame:
         self._world_pose = None
         self.frameid = _frameid
         self._previous_keyframe = None
+        self._leftright = leftright
         _frameid += 1
         
     def get_right_frame(self):
@@ -41,7 +43,7 @@ class Frame:
         except:
             if self._rightpath is None:
                 raise ValueError('rightpath is not set')
-            self._rightframe = Frame('/'.join([self._rightpath, self._filepath.split('/')[-1]]))
+            self._rightframe = Frame('/'.join([self._rightpath, self._filepath.split('/')[-1]]), leftright=1)
             return self._rightframe
      
     def get_image(self):
@@ -61,6 +63,12 @@ class Frame:
             del self._smoothed
         except:
             pass
+        try:
+            del self._observations
+        except:
+            pass
+
+
     
     def get_width(self):
         return self.get_image().shape[1]
@@ -97,18 +105,33 @@ class Frame:
     
     def set_previous_keyframe(self, keyframe):
         self._previous_keyframe = keyframe
-        print('set_previous_keyframe', self.frameid)
+        #print('set_previous_keyframe', self.frameid)
+    
+    def get_previous_keyframe(self):
+        return self._previous_keyframe
     
     def get_world_pose(self):
         if self._world_pose is None:
             if self._previous_keyframe is None:
-                print('get_world_pose first ', self.frameid)
+                #print('get_world_pose first ', self.frameid)
                 self._world_pose = self._pose
             else:
                 self._world_pose = np.dot( self._previous_keyframe.get_world_pose(), self.get_pose() )
-                print('get_world_pose ', self.frameid, self._world_pose )
+                #print('get_world_pose ', self.frameid, self._world_pose )
         return self._world_pose
     
+    def get_inv_world_pose(self):
+        try:
+            return self._inv_world_pose
+        except:
+            self._inv_world_pose = np.linalg.pinv(self.get_world_pose())
+            return self._inv_world_pose
+    
+    def set_world_pose(self, pose):
+        self._world_pose = pose
+        self._pose = np.dot( np.linalg.pinv( self._previous_keyframe.get_world_pose() ), pose )
+        #print('set_world_pose', pose, '\n', self._previous_keyframe.get_world_pose(), '\n', self._pose)
+                            
     #def get_pose_wrt(self, frame_origin):
     #    if self == frame_origin:
     #        return self.get_pose()
@@ -130,19 +153,26 @@ class Frame:
     
     def filter_not_useful(self, stereo_confidence=STEREO_CONFIDENCE):
         self.filter_observations(lambda x: x.has_mappoint() or (x.disparity is not None and x.confidence > stereo_confidence))
+        
+    def filter_has_depth(self, stereo_confidence=STEREO_CONFIDENCE):
+        self.filter_observations(lambda x: x.disparity is not None and x.confidence > stereo_confidence)
 
-    def filter_most_confident(self):
-        self.filter_observations(lambda x: x.disparity is not None)
-        self._observations.sort(key = lambda x: -x.confidence)
-        seen = set()
-        keep = []
-        for o in self._observations:
-            if (o.cx, o.cy) not in seen:
-                keep.append(o)
-        self._observations = keep
+    #def filter_most_confident(self):
+    #    self.filter_observations(lambda x: x.disparity is not None)
+    #    self._observations.sort(key = lambda x: -x.confidence)
+    #    seen = set()
+    #    keep = []
+    #    for o in self._observations:
+    #        if (o.cx, o.cy) not in seen:
+    #            keep.append(o)
+    #    self._observations = keep
         
     def filter_non_mappoint(self):
         self.filter_observations(lambda x: x.has_mappoint())
+        
+    def get_static_observations(self):
+        return self.get_observations()
+        #return [ o for o in self.get_observations() if o.is_static() ]
         
     def get_observations(self):
         try:
@@ -156,25 +186,39 @@ class Frame:
 
             veTop = top_vertical_edge(higher_vertical_edges)
             veBottom = bottom_vertical_edge(lower_vertical_edges)
-            veBottom[-1:,:] = zeroimage[-1:,:]
-            veBottom[:PATCH_SIZE,:] = zeroimage[0:PATCH_SIZE,:]
-            veBottom[:,:PATCH_SIZE+2] = zeroimage[:,:PATCH_SIZE+2]
-            veBottom[:,-PATCH_SIZE:] = zeroimage[:,-PATCH_SIZE:]
-            veTop[-PATCH_SIZE:,:] = zeroimage[-PATCH_SIZE:,:]
-            veTop[:1,:] = zeroimage[:1,:]
-            veTop[:,:PATCH_SIZE+2] = zeroimage[:,:PATCH_SIZE+2]
-            veTop[:,-PATCH_SIZE:] = zeroimage[:,-PATCH_SIZE:]
-            
+            #veBottom[-1:,:] = zeroimage[-1:,:]
+            #veBottom[:PATCH_SIZE,:] = zeroimage[0:PATCH_SIZE,:]
+            #veBottom[:,:PATCH_SIZE+2] = zeroimage[:,:PATCH_SIZE+2]
+            #veBottom[:,-PATCH_SIZE:] = zeroimage[:,-PATCH_SIZE:]
+            #veTop[-PATCH_SIZE:,:] = zeroimage[-PATCH_SIZE:,:]
+            #veTop[:1,:] = zeroimage[:1,:]
+            #veTop[:,:PATCH_SIZE+2] = zeroimage[:,:PATCH_SIZE+2]
+            #veTop[:,-PATCH_SIZE:] = zeroimage[:,-PATCH_SIZE:]
+            veBottom[:,:HALF_PATCH_SIZE+2] = zeroimage[:,:HALF_PATCH_SIZE+2]
+            veBottom[:,-HALF_PATCH_SIZE:] = zeroimage[:,-HALF_PATCH_SIZE:]
+            veTop[:,:HALF_PATCH_SIZE+2] = zeroimage[:,:HALF_PATCH_SIZE+2]
+            veTop[:,-HALF_PATCH_SIZE:] = zeroimage[:,-HALF_PATCH_SIZE:]
+            if self._leftright:
+                veBottom[-PATCH_SIZE:,:] = zeroimage[-PATCH_SIZE:,:]
+                veTop[-PATCH_SIZE:,:] = zeroimage[-PATCH_SIZE:,:]
+                veBottom[:HALF_PATCH_SIZE,:] = zeroimage[:HALF_PATCH_SIZE,:]
+                veTop[:HALF_PATCH_SIZE,:] = zeroimage[:HALF_PATCH_SIZE,:]
+            else:
+                veBottom[:PATCH_SIZE,:] = zeroimage[:PATCH_SIZE,:]
+                veTop[:PATCH_SIZE,:] = zeroimage[:PATCH_SIZE,:]
+                veBottom[-HALF_PATCH_SIZE:,:] = zeroimage[-HALF_PATCH_SIZE:,:]
+                veTop[-HALF_PATCH_SIZE:,:] = zeroimage[-HALF_PATCH_SIZE:,:]
+
             # combine pixels found at the top and bottom of edges
             # results in an image where keypoints are set as pixels with a 255 intensity
             #keypointImage = veTop + veBottom
 
             #convert from pixels in an image to KeyPoints
             keypoints = np.column_stack(np.where(veTop >= 255))
-            bottomleftpoints = [ObservationTopLeft(self, x, y) for y,x in keypoints]
-            bottomrightpoints = [ObservationTopRight(self, x, y) for y,x in keypoints]
+            obs = { (x,y) for y,x in keypoints }
             keypoints = np.column_stack(np.where(veBottom >= 255))
-            topleftpoints = [ObservationBottomLeft(self, x, y) for y,x in keypoints]
-            toprightpoints = [ObservationBottomRight(self, x, y) for y,x in keypoints]
-            self._observations = topleftpoints + toprightpoints + bottomleftpoints + bottomrightpoints
+            obs = obs | { (x,y) for y,x in keypoints }
+            
+            self._observations = [Observation(self, x, y) for x,y in obs ]
+            self._observations = [ o for o in self._observations if o.get_patch().flatten().std() > 20 ]
             return self._observations
