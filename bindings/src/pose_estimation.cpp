@@ -13,10 +13,10 @@
 using namespace std;
 
 const float deltaMono = sqrt(5.991);
-const float CameraFx = 718.856;
-const float CameraFy = 718.856;
-const float CameraCx = 607.1928;
-const float CameraCy = 185.2157;
+const float CameraFx = 707.0912;
+const float CameraFy = 707.0912;
+const float CameraCx = 601.8873;
+const float CameraCy = 183.1104;
 const float InvCameraFx = 1.0f / CameraFx;
 const float InvCameraFy = 1.0f / CameraFy;
 
