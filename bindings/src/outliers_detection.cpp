@@ -247,7 +247,7 @@ Eigen::MatrixXd outliersForLocalBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> key
             g2o::EdgeSE3ProjectXYZ* e = vpEdgesMono[i];
             MapPoint pMP = vpMapPointEdgeMono[i];
             
-            if(e->chi2()>5.991 || !e->isDepthPositive()) {
+            if(e->chi2()> 5.991 || !e->isDepthPositive()) {
                 e->setLevel(1);
             }
             

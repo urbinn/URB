@@ -16,6 +16,9 @@ using namespace std;
 
 
 int fullBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eigen::MatrixXd> mapPoints, Eigen::Ref<Eigen::MatrixXd> pointsRelation )  {
+
+    int primaryKeyframeId = keyframes.row(0)(0) ;
+
        //step 1 setup keyframes
     std::vector<KeyFrame> vpKFs;
     for(int n = 0; n < keyframes.rows(); n++) {
@@ -62,7 +65,7 @@ int fullBundleAdjustment(Eigen::Ref<Eigen::MatrixXd> keyframes, Eigen::Ref<Eigen
         g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
         vSE3->setEstimate(toSE3QuatFromMatrix(pKFi.second));
         vSE3->setId(pKFi.first.second);
-        if (pKFi.first.second == 0 ) {
+        if (pKFi.first.second == primaryKeyframeId ) {
             vSE3->setFixed(true);
         } else {
             vSE3->setFixed(false);
