@@ -32,7 +32,7 @@ class Observation:
         affine_coords = np.dot( self.frame.get_pose(), last_observation.get_affine_coords() )  
         cam_coords = affine_coords_to_cam( affine_coords )
         #print(self.cx, self.cy, cam_coords[0], cam_coords[1])
-        if abs(cam_coords[0] - self.cx) > 4 or abs(cam_coords[1] - self.cy) > 4:
+        if abs(cam_coords[0] - self.cx) > 2 or abs(cam_coords[1] - self.cy) > 2:
             return False
         return True
             

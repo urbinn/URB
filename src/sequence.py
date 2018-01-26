@@ -100,7 +100,7 @@ def pose_frame(frame, keyframe, sequence_confidence = SEQUENCE_CONFIDENCE):
     #    print('invalid rotation', rotation, '\n', pose)
     #if invalid_speed:
     #    print('invalid speed keyframe {} frame {} speed {}\n'.format(keyframe.frameid, frame.frameid, speed), pose)
-    print(frame.frameid, '\n', bestpose)
+    #print(frame.frameid, '\n', bestpose)
     return invalid_speed, invalid_rotation, count
     
 def create_sequence(frames, sequence_confidence=SEQUENCE_CONFIDENCE):
@@ -246,7 +246,7 @@ def get_fixed_keyframes(mappoints, covisible_keyframes):
 # save the keyframe poses to file
 # (keyframe_id, frame_id, 4x4 pose)
 def keyframes_to_np(keyframes):
-    return np.hstack([ [ [ kf.keyframeid] for kf in keyframes ], [ [kf.frameid] for kf in keyframes ], [ kf.get_world_pose().flatten() for kf in keyframes ] ])
+    return np.hstack([ [ [ kf.keyframeid] for kf in keyframes ], [ [kf.frameid] for kf in keyframes ], [ kf.get_cumulative_world_pose().flatten() for kf in keyframes ] ])
 
 def keyframes_pose_to_np(keyframes):
     return np.hstack([ [ [ kf.keyframeid] for kf in keyframes ], [ [kf.frameid] for kf in keyframes ], [ kf.get_pose().flatten() for kf in keyframes ] ])

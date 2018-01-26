@@ -1,19 +1,17 @@
 # reken een hele sequence van KITTI door en bewaar de keyframe poses, mappoints met world coordinates, en edges tussen keyframes en mappoints
+import builtins
+import sys
+builtins.SEQUENCE = '00' if len(sys.argv) < 2 else int(sys.argv[1])
+OUTDIR = 'results' if len(sys.argv) < 3 else sys.argv[2]
+
 import os
 os.environ['STEREO_CONFIDENCE'] = '1.6'
 os.environ['SEQUENCE_CONFIDENCE'] = '1.6'
 os.environ['PATCH_SIZE'] = '17'
 
-import sys
-SEQUENCE = '00' if len(sys.argv) < 2 else sys.argv[1]
-OUTDIR = 'results' if len(sys.argv) < 3 else sys.argv[2]
-
 from src.kitti import *
 import numpy as np
 import glob
-
-LEFTDIR = '/data/urbinn/datasets/kitti/sequences/%02d/image_2'%(int(SEQUENCE))
-RIGHTDIR = '/data/urbinn/datasets/kitti/sequences/%02d/image_3'%(int(SEQUENCE))
 
 FILES = len(list(glob.glob(LEFTDIR + '/*')))
 FRAMECOUNT = FILES
