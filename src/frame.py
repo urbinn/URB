@@ -32,6 +32,7 @@ class Frame:
         self._keyframe = None
         self._rightpath = rightpath
         self._world_pose = None
+        self._cumulative_world_pose = None
         self.frameid = _frameid
         self._previous_keyframe = None
         self._leftright = leftright
@@ -126,6 +127,14 @@ class Frame:
         except:
             self._inv_world_pose = np.linalg.pinv(self.get_world_pose())
             return self._inv_world_pose
+    
+    def get_cumulative_world_pose(self):
+        if self._cumulative_world_pose is None:
+            if self._previous_keyframe is None:
+                self._cumulative_world_pose = self._pose
+            else:
+                self._cumulative_world_pose = np.dot( self._previous_keyframe.get_cumulative_world_pose(), np.linalg.pinv( self.get_pose() ) )
+        return self._cumulative_world_pose
     
     def set_world_pose(self, pose):
         self._world_pose = pose
