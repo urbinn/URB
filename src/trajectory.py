@@ -2,6 +2,22 @@ import numpy as np
 import cv2
 import random
 from src.imageio import zero_image_from_dimension
+import matplotlib.pyplot as plt
+
+LEGEND = {
+    'Window': (255, 0, 0),
+    'Cyclist': (0, 255, 0),
+    'Car': (0, 0, 255),
+    'Van': (255, 100, 0),
+    'Traffic_lights': (255, 255, 0),
+    'Lamppost': (255, 255, 100),
+    'Pedestrian': (100, 255, 0),
+    'Door': (50, 50, 255),
+    'Fence': (255, 50, 50),
+    'Pole': (50, 255, 50),
+    'Forbidden_to_stand_still': (0, 0, 0),
+    'Guidance_beacon_right': (0, 100, 0)
+}
 
 class Trajectory:
     def __init__(self, poses, dimensions = None, observations_per_frame = None):
@@ -59,7 +75,7 @@ class Trajectory:
                 x, _, z, _ = coord
                 scaled_x, scaled_y = self.scale_coords(x, z, self._scaling)
 
-                cv2.circle(img, (int(scaled_x), int(scaled_y)), 3, (255, 0, 0), -1)
+                cv2.circle(img, (int(scaled_x), int(scaled_y)), 3, LEGEND[clas], -1)
 
                 if with_classifications:            
                     cv2.putText(img, str(clas), (int(scaled_x), int(scaled_y)), cv2.FONT_HERSHEY_PLAIN, 1, (255, 0, 0), 1, cv2.LINE_AA)
