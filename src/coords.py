@@ -1,18 +1,18 @@
 import sys
-from src.settings.load import *
+from src.settings.settings import *
 import numpy as np
 
 def cam_to_affine_coords(u, v, z):
-    return np.array([(u-CAMERA_CX) * z * CAMERA_FX_INV, (v-CAMERA_CY) * z * CAMERA_FY_INV, z, 1.0])
+    return np.array([(u-get_camera_cx()) * z * get_camera_fx_inv(), (v-get_camera_cy()) * z * get_camera_fy_inv(), z, 1.0])
 
 def affine_coords_to_cam(coords):
     z = coords[2]
-    x = coords[0] * CAMERA_FX / z + CAMERA_CX
-    y = coords[1] * CAMERA_FY / z + CAMERA_CY
+    x = coords[0] * get_camera_fx() / z + get_camera_cx()
+    y = coords[1] * get_camera_fy() / z + get_camera_cy()
     return np.array([x,y,z, 1.0], dtype=np.float64)
 
 def estimated_distance(disparity):
-    return -CAMERA_BF / disparity
+    return - get_camera_bf() / disparity
 
 # Estimates the subpixel disparity based on a parabola fitting of the three points around the minimum.
 def subpixel_disparity(disparity , coords):
@@ -28,8 +28,8 @@ def subpixel_disparity(disparity , coords):
 # The bestDistance is returned along with its nearest neighbors to facilitate subpixel disparity estimation.
 def patch_disparity(obs, frame_right):
     frame_left = obs.get_frame()
-    if obs.cy < PATCH_SIZE or obs.cy > frame_left.get_height() - PATCH_SIZE or \
-        obs.cx < PATCH_SIZE or obs.cx > frame_left.get_width() - PATCH_SIZE:
+    if obs.cy < get_patch_size() or obs.cy > frame_left.get_height() - get_patch_size() or \
+        obs.cx < get_patch_size() or obs.cx > frame_left.get_width() - get_patch_size():
             return None, None, None
     best_disparity = 0
     best_distance = sys.maxsize
@@ -39,10 +39,10 @@ def patch_disparity(obs, frame_right):
     distances = []
     patchL = obs.get_patch()
     for disparity in range(0, obs.leftx):
-        patchR = frame_right.get_image()[obs.topy:obs.topy+PATCH_SIZE, 
-                                                               obs.leftx-disparity:obs.leftx+PATCH_SIZE-disparity]
+        patchR = frame_right.get_image()[obs.topy:obs.topy+get_patch_size(), 
+                                                               obs.leftx-disparity:obs.leftx+get_patch_size()-disparity]
         #print(patchL.shape, patchR.shape,leftxstart,patchSize, disparity)
-        distance = cv2.norm(patchL, patchR, NORM)
+        distance = cv2.norm(patchL, patchR, get_norm())
         distances.append(distance)
         if descending:
             if len(distances) > 0 and distance > last_distance:

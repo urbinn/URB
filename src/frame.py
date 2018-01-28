@@ -1,4 +1,4 @@
-from src.settings.load import *
+from src.settings.settings import *
 from src.observation import *
 from src.imageio import *
 import cv2
@@ -30,7 +30,7 @@ class Frame:
         self._filepath = filepath
         self._pose = None
         self._keyframe = None
-        self._rightpath = rightpath
+        self._rightpath = get_rightdir() if rightpath is None else rightpath
         self._world_pose = None
         self._cumulative_world_pose = None
         self.frameid = _frameid
@@ -160,10 +160,14 @@ class Frame:
     def filter_observations(self, filter):
         self._observations = [obs for obs in self.get_observations() if filter(obs)]
     
-    def filter_not_useful(self, stereo_confidence=STEREO_CONFIDENCE):
+    def filter_not_useful(self, stereo_confidence=None):
+        if stereo_confidence is None:
+            stereo_confidence = get_stereo_confidence()
         self.filter_observations(lambda x: x.has_mappoint() or (x.disparity is not None and x.confidence > stereo_confidence))
         
-    def filter_has_depth(self, stereo_confidence=STEREO_CONFIDENCE):
+    def filter_has_depth(self, stereo_confidence=None):
+        if stereo_confidence is None:
+            stereo_confidence = get_stereo_confidence()
         self.filter_observations(lambda x: x.disparity is not None and x.confidence > stereo_confidence)
 
     #def filter_most_confident(self):
@@ -203,20 +207,20 @@ class Frame:
             #veTop[:1,:] = zeroimage[:1,:]
             #veTop[:,:PATCH_SIZE+2] = zeroimage[:,:PATCH_SIZE+2]
             #veTop[:,-PATCH_SIZE:] = zeroimage[:,-PATCH_SIZE:]
-            veBottom[:,:HALF_PATCH_SIZE+2] = zeroimage[:,:HALF_PATCH_SIZE+2]
-            veBottom[:,-HALF_PATCH_SIZE:] = zeroimage[:,-HALF_PATCH_SIZE:]
-            veTop[:,:HALF_PATCH_SIZE+2] = zeroimage[:,:HALF_PATCH_SIZE+2]
-            veTop[:,-HALF_PATCH_SIZE:] = zeroimage[:,-HALF_PATCH_SIZE:]
+            veBottom[:,:get_half_patch_size()+2] = zeroimage[:,:get_half_patch_size()+2]
+            veBottom[:,-get_half_patch_size():] = zeroimage[:,-get_half_patch_size():]
+            veTop[:,:get_half_patch_size()+2] = zeroimage[:,:get_half_patch_size()+2]
+            veTop[:,-get_half_patch_size():] = zeroimage[:,-get_half_patch_size():]
             if self._leftright:
-                veBottom[-PATCH_SIZE:,:] = zeroimage[-PATCH_SIZE:,:]
-                veTop[-PATCH_SIZE:,:] = zeroimage[-PATCH_SIZE:,:]
-                veBottom[:HALF_PATCH_SIZE,:] = zeroimage[:HALF_PATCH_SIZE,:]
-                veTop[:HALF_PATCH_SIZE,:] = zeroimage[:HALF_PATCH_SIZE,:]
+                veBottom[-get_patch_size():,:] = zeroimage[-get_patch_size():,:]
+                veTop[-get_patch_size():,:] = zeroimage[-get_patch_size():,:]
+                veBottom[:get_half_patch_size(),:] = zeroimage[:get_half_patch_size(),:]
+                veTop[:get_half_patch_size(),:] = zeroimage[:get_half_patch_size(),:]
             else:
-                veBottom[:PATCH_SIZE,:] = zeroimage[:PATCH_SIZE,:]
-                veTop[:PATCH_SIZE,:] = zeroimage[:PATCH_SIZE,:]
-                veBottom[-HALF_PATCH_SIZE:,:] = zeroimage[-HALF_PATCH_SIZE:,:]
-                veTop[-HALF_PATCH_SIZE:,:] = zeroimage[-HALF_PATCH_SIZE:,:]
+                veBottom[:get_patch_size(),:] = zeroimage[:get_patch_size(),:]
+                veTop[:get_patch_size(),:] = zeroimage[:get_patch_size(),:]
+                veBottom[-get_half_patch_size():,:] = zeroimage[-get_half_patch_size():,:]
+                veTop[-get_half_patch_size():,:] = zeroimage[-get_half_patch_size():,:]
 
             # combine pixels found at the top and bottom of edges
             # results in an image where keypoints are set as pixels with a 255 intensity

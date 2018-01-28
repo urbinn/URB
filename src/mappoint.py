@@ -1,4 +1,4 @@
-from src.settings.load import *
+from src.settings.settings import *
 from src.coords import *
 from src.imageio import *
 

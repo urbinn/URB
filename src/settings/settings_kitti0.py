@@ -1,5 +1,3 @@
-from src.settings.settings import *
-
 # bf is baseline * focal distance om de diepte te berekenen met formule focal distance * baseline / disparity
 ###KITTI
 CAMERA_BF=386.1448 

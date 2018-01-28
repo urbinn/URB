@@ -1,4 +1,4 @@
-from src.settings.load import *
+from src.settings.settings import *
 import cv2
 import math
 import matplotlib.pyplot as plt
@@ -95,7 +95,9 @@ def draw_observations_id(observations):
             cv2.putText(img, str(id), (int(p.cx), int(p.cy)), FONT, FONTSIZE, (255, 0, 0), 1, cv2.LINE_AA)
     return img
 
-def get_patch(image, leftx, topy, patch_size = PATCH_SIZE):
+def get_patch(image, leftx, topy, patch_size = None):
+    if patch_size is None:
+        patch_size = get_patch_size()
     patch = image[topy:topy+patch_size, leftx:leftx+patch_size]
     if patch.shape[0] != patch_size or patch.shape[1] != patch_size:
         raise ValueError('illegal patch size leftx={} topy={} shape={} patch_size={}'.format(leftx, topy, patch.shape, patch_size))
